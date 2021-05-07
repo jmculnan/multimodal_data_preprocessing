@@ -61,8 +61,7 @@ class TRSToCSV:
                         # print("Participant found")
                         real_speaker = 1
                     else:
-                        print("There was some problem here")
-                        sys.exit(1)
+                        exit("There was some problem here")
 
                     wd_num += 1
                     if spkr != real_speaker:
@@ -97,7 +96,6 @@ class ExtractAudio:
         savename : the name of the saved CSV
         Saves the CSV file
         """
-        # todo: can all of these take -lldcsvoutput ?
         conf_dict = {
             "ISO9": "IS09_emotion.conf",
             "IS10": "IS10_paraling.conf",
@@ -134,7 +132,7 @@ class AudioSplit:
         self.afile = f"{path}/{audio_name}"
         self.cfile = f"{path}/{diarized_csv}"
         self.ext = pathext
-        self.fullp = f"{path}/{pathext}"
+        self.full_path = f"{path}/{pathext}"
 
     def split_audio(self):
         """
@@ -146,12 +144,12 @@ class AudioSplit:
           timeend   = time of turn end
         """
 
-        os.makedirs(self.fullp, exist_ok=True)
+        os.makedirs(self.full_path, exist_ok=True)
 
         with open(self.cfile, "r") as csvfile:
             for n, line in enumerate(csvfile):
                 speaker, timestart, timeend = line.strip().split(",")[:3]
-                os.makedirs(f"{self.fullp}/{speaker}", exist_ok=True)
+                os.makedirs(f"{self.full_path}/{speaker}", exist_ok=True)
                 sp.run(
                     [
                         "ffmpeg",
@@ -161,7 +159,7 @@ class AudioSplit:
                         str(timestart),
                         "-to",
                         str(timeend),
-                        f"{self.fullp}/{speaker}/{n}",
+                        f"{self.full_path}/{speaker}/{n}",
                         "-loglevel",
                         "quiet"
                     ]
@@ -175,7 +173,7 @@ class AudioSplit:
         Make a .txt file containing the names of all audio in the directory
         Used for ffmpeg concatenation
         """
-        txtfilepath = f"{self.fullp}/{speaker}/{self.ext}-{speaker}.txt"
+        txtfilepath = f"{self.full_path}/{speaker}/{self.ext}-{speaker}.txt"
         with open(txtfilepath, "w") as txtfile:
             for item in os.listdir(audiodir):
                 if item[-4:] == ".wav":
@@ -197,7 +195,7 @@ class AudioSplit:
                 "-safe",
                 "0",
                 "-i",
-                f"{self.fullp}/{speaker}/{txtfile}",
+                f"{self.full_path}/{speaker}/{txtfile}",
                 "-c",
                 "copy",
                 f"{self.path}/output/{outputname}",
@@ -205,7 +203,68 @@ class AudioSplit:
                 "quiet",
             ]
         )
-        print(f"Concatenation completed for {self.fullp}")
+        print(f"Concatenation completed for {self.full_path}")
+
+
+class GetFeatures:
+    """
+    Takes input files and gets acoustic features
+    Organizes features as required for this project
+    Combines data from acoustic csv + transcription csv
+    """
+
+    def __init__(self, path, acoustic_csv, trscsv):
+        self.path = path
+        self.acoustic_csv = acoustic_csv
+        self.trscsv = trscsv
+
+    def get_features_dict(self, dropped_cols=None):
+        """
+        Get the set of phonological/phonetic features
+        """
+        # create a holder for features
+        feature_set = {}
+
+        # iterate through csv files created by openSMILE
+        for csvfile in os.listdir(self.savepath):
+            if csvfile.endswith(".csv"):
+                csv_name = csvfile.split(".")[0]
+                # get data from these files
+                csv_data = pd.read_csv(f"{self.savepath}/{csvfile}", sep=";")
+                # drop name and time frame, as these aren't useful
+                if dropped_cols:
+                    csv_data = self.drop_cols(csv_data, dropped_cols)
+                else:
+                    csv_data = (
+                        csv_data.drop(["name", "frameTime"], axis=1)
+                            .to_numpy()
+                            .tolist()
+                    )
+                if "nan" in csv_data or "NaN" in csv_data or "inf" in csv_data:
+                    pprint(csv_data)
+                    print("Data contains problematic data points")
+                    sys.exit(1)
+
+                # add it to the set of features
+                feature_set[csv_name] = csv_data
+
+        return feature_set
+
+
+def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard"):
+    """
+    Run feature extraction from audio_extraction.py for meld
+    """
+    # save all files in the directory
+    for wfile in os.listdir(audio_path):
+        if dataset == "meld":
+            save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
+            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+            meld_extractor.save_acoustic_csv(feature_set, save_name)
+        else:
+            save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
+            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+            meld_extractor.save_acoustic_csv(feature_set, save_name)
 
 
 def transform_audio(txtfile):
@@ -310,81 +369,25 @@ def avg_feats_across_words(feature_df):
     return feature_df
 
 
-class GetFeatures:
+def convert_to_wav(nonwav_file):
     """
-    Takes input files and gets acoustic features
-    Organizes features as required for this project
-    Combines data from acoustic csv + transcription csv
+    convert audio from another format to wav
+    nonwav_file : the name of the original file
+    ext:
     """
+    # check for valid extension
+    if nonwav_file.endswith(".m4a") or nonwav_file.endswith(".mp4"):
+        # grab name without extension
+        wav_name = f"{nonwav_file[:-4]}.wav"
 
-    def __init__(self, path, acoustic_csv, trscsv):
-        self.path = path
-        self.acoustic_csv = acoustic_csv
-        self.trscsv = trscsv
+        if not os.path.exists(wav_name):
+            sp.run(["ffmpeg", "-i", nonwav_file, "-ac", "1", wav_name])
+        else:
+            print(f"{wav_name} already exists")
 
-    def get_features_dict(self, dropped_cols=None):
-        """
-        Get the set of phonological/phonetic features
-        """
-        # create a holder for features
-        feature_set = {}
-
-        # iterate through csv files created by openSMILE
-        for csvfile in os.listdir(self.savepath):
-            if csvfile.endswith(".csv"):
-                csv_name = csvfile.split(".")[0]
-                # get data from these files
-                csv_data = pd.read_csv(f"{self.savepath}/{csvfile}", sep=";")
-                # drop name and time frame, as these aren't useful
-                if dropped_cols:
-                    csv_data = self.drop_cols(csv_data, dropped_cols)
-                else:
-                    csv_data = (
-                        csv_data.drop(["name", "frameTime"], axis=1)
-                            .to_numpy()
-                            .tolist()
-                    )
-                if "nan" in csv_data or "NaN" in csv_data or "inf" in csv_data:
-                    pprint(csv_data)
-                    print("Data contains problematic data points")
-                    sys.exit(1)
-
-                # add it to the set of features
-                feature_set[csv_name] = csv_data
-
-        return feature_set
-
-
-def convert_mp4_to_wav(mp4_file):
-    # if the audio is in an mp4 file, convert to wav
-    # file is saved to the location where the mp4 was found
-    # returns the name of the file and its path
-    file_name = mp4_file.split(".mp4")[0]
-    wav_name = f"{file_name}.wav"
-    # check if the file already exists
-    if not os.path.exists(wav_name):
-        os.system("ffmpeg -i {0} -ac 1 {1}".format(mp4_file, wav_name))
-    # otherwise, print that it exists
+        return wav_name
     else:
-        print(f"{wav_name} already exists")
-
-    return wav_name
-
-
-def convert_m4a_to_wav(m4a_file):
-    # if the audio is in an mp4 file, convert to wav
-    # file is saved to the location where the mp4 was found
-    # returns the name of the file and its path
-    file_name = m4a_file.split(".m4a")[0]
-    wav_name = "{}.wav".format(file_name)
-    # check if the file already exists
-    if not os.path.exists(wav_name):
-        os.system("ffmpeg -i {0} -ac 1 {1}".format(m4a_file, wav_name))
-    # otherwise, print that it exists
-    else:
-        print("{} already exists".format(wav_name))
-
-    return wav_name
+        exit(f"{nonwav_file} is an unsupported file type")
 
 
 def extract_portions_of_mp4_or_wav(
@@ -406,13 +409,8 @@ def extract_portions_of_mp4_or_wav(
     full_sound_path = os.path.join(path_to_sound_file, sound_file)
 
     # check sound file extension
-    if sound_file.endswith(".mp4"):
-        # convert to wav first
-        full_sound_path = convert_mp4_to_wav(full_sound_path)
-
-    if sound_file.endswith(".m4a"):
-        # convert m4a to wav first
-        full_sound_path = convert_m4a_to_wav(full_sound_path)
+    if sound_file.endswith(".mp4") or sound_file.endswith(".m4a"):
+        full_sound_path = convert_to_wav(full_sound_path)
 
     if not short_file_name:
         print("short file name not found")
@@ -421,9 +419,9 @@ def extract_portions_of_mp4_or_wav(
         )
 
     if save_path is not None:
-        save_name = save_path + "/" + short_file_name
+        save_name = f"{save_path}/{short_file_name}"
     else:
-        save_name = path_to_sound_file + "/" + short_file_name
+        save_name = f"{path_to_sound_file}/{short_file_name}"
 
     # get shortened version of file
     sp.run(
