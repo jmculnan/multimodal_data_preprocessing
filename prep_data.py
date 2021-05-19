@@ -1,6 +1,7 @@
 # see if we can create a dataset-agnostic data prep class
 import math
 import glob
+import datetime
 import os
 import pickle
 import json
@@ -51,11 +52,14 @@ class DataPrep:
         else:
             self.paths = {"all": data_path}
 
-        # get acoustic dictionary
+        # get acoustic set for train, dev, test partitions
+        (acoustic_train,
+         train_usable_utts,
+         acoustic_train_lengths
+         ) = make_acoustic_set(self.paths["train"], utterance_fname,
+                               self.d_type, feature_set, 76, add_avging=False)
 
-        # get acoustic set
-
-        # get data tensors
+        # use acoustic sets to get data tensors
 
         # get acoustic means
 
@@ -82,6 +86,7 @@ def get_paths(data_type, data_path):
 def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     """
     Use the path to get a dict of unique_id : data pairs
+        And the length of each acoustic df
         where data is the acoustic feature tensor for that item
     :param file_path: the path to the dir containing data files
     :param dataset: the dataset (e.g. meld, firstimpr)
@@ -89,39 +94,42 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     :param use_cols: whether to select specific columns
     :return: dict of id : data pairs; length of each data point
     """
+    print(f"Starting acoustic dict at {datetime.datetime.now()}")
     acoustic_dict = {}
     # todo: is this the right type for this?
     acoustic_lengths = {}
 
     # get the acoustic features files
     for feats_file in glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"):
-
         # read each file as a pandas df
         if use_cols is not None:
-            feats = pd.read_csv(
-                f"{file_path}/{feature_set}/{feats_file}", usecols=use_cols, sep=";"
+            feats = pd.read_csv(feats_file, usecols=use_cols, sep=";"
             )
         else:
-            feats = pd.read_csv(f"{file_path}/{feature_set}/{feats_file}", sep=";")
+            feats = pd.read_csv(feats_file, sep=";")
             feats.drop(["name", "frameTime"], axis=1, inplace=True)
 
         # get the id
+        feats_file_name = feats_file.split("/")[-1]
+
         if dataset == "meld":
-            dia_id, utt_id = feats_file.split("_")[:2]
+            dia_id, utt_id = feats_file_name.split("_")[:2]
             id = (dia_id, utt_id)
         else:
-            id = feats_file.split(f"_{feature_set}.csv")[0]
+            id = feats_file_name.split(f"_{feature_set}.csv")[0]
 
         # save the dataframe to a dict with id as key
         if feats.shape[0] > 0:
             # todo: should we convert to torch tensor instead?
-            acoustic_dict[id] = feats.values.tolist()
+            acoustic_dict[id] = feats
             # do this so we can ensure same order of lengths and feats
             acoustic_lengths[id] = feats.shape[0]
 
         # delete the features df bc it takes up lots of space
         del feats
 
+    print(f"Acoustic dict made at {datetime.datetime.now()}")
+    print(f"Len of dict: {len(acoustic_dict.keys())}")
     return acoustic_dict, acoustic_lengths
 
 
@@ -135,7 +143,8 @@ def make_acoustic_set(
         use_cols=None
 ):
     """
-    Prepare the acoustic data using the acoustic dict
+    Prepare the acoustic data
+    Includes creation of acoustic dict
     :param file_path: the path to dir containing data files
     :param text_file: name of file with utterances + labels
     :param dataset: the dataset
@@ -145,7 +154,7 @@ def make_acoustic_set(
     :return:
     """
     # get acoustic dict and lengths
-    acoustic_dict, acoustic_lengths = make_acoustic_dict(file_path, feature_set, use_cols)
+    acoustic_dict, acoustic_lengths = make_acoustic_dict(file_path, dataset, feature_set, use_cols)
 
     # get text
     # todo: verify sep is always \t
@@ -180,12 +189,48 @@ def make_acoustic_set(
             acoustic_data = acoustic_dict[item]
 
             if not add_avging:
-                # set an intermediate holder
-                acoustic_holder = torch.zeros((longest_acoustic, acoustic_lengths[item]))
+                acoustic_data = acoustic_data[acoustic_data.index <= longest_acoustic]
+                acoustic_holder = torch.tensor(acoustic_data.values)
+            else:
+                data_len = len(acoustic_data)
+                acoustic_holder = torch.mean(torch.tensor(acoustic_data.values)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0)
 
-                # add acoustic features to holder of features
-                for i, feats in enumerate(acoustic_data):
-                    if i >= longest_acoustic:
-                        break
-                    for i, feat in enumerate(feats):
-                        acoustic_holder[i][j] = feat 
+            # add features as tensor to acoustic data
+            all_acoustic.append(acoustic_holder)
+
+    # delete acoustic dict to save space
+    del acoustic_dict
+
+    # pad the sequence and reshape it to proper format
+    # this is here to keep the formatting for acoustic RNN
+    all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
+    all_acoustic = all_acoustic.transpose(0, 1)
+
+    print(f"Acoustic set made at {datetime.datetime.now()}")
+
+    return all_acoustic, usable_utts, acoustic_lengths
+
+
+def make_data_tensors(text_file, usable_utts, glove):
+    """
+    Prepare tensors of utterances, genders, gold labels
+    :param text_file: the file containing the text
+    :param usable_utts: a list of usable utterances
+    :param glove: an instance of class Glove
+    :return:
+    """
+    all_utterances = []
+    all_speakers = []
+    all_genders = []
+    all_ids = []
+    all_ys = {}
+
+    utt_lengths = []
+
+
+    pass
+
+
+if __name__ == "__main__":
+    chalearn = DataPrep("chalearn", "../../datasets/multimodal_datasets/Chalearn",
+                        "IS10", "gold_and_utts.tsv")
