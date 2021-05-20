@@ -13,10 +13,13 @@ import torch
 from torch import nn
 from torchtext.data import get_tokenizer
 
+from combine_xs_and_ys_by_dataset import combine_xs_and_ys_chalearn
 from utils.audio_extraction import (ExtractAudio,
                                     convert_to_wav,
                                     run_feature_extraction
                                     )
+from make_data_tensors_by_dataset import *
+
 import pandas as pd
 
 from utils.data_prep_helpers import (
@@ -39,7 +42,8 @@ class StandardPrep:
             data_path,
             feature_set,
             utterance_fname,
-            use_cols=None
+            glove,
+            use_cols=None,
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -72,12 +76,18 @@ class StandardPrep:
         self.longest_acoustic = 1500
 
         # set DataPrep instance for each partition
-        self.train_prep = DataPrep(self.d_type, train_data, self.paths['train'], self.fset,
-                                   self.acoustic_cols_used, self.longest_acoustic)
-        self.dev_prep = DataPrep(self.d_type, dev_data, self.paths['dev'], self.fset,
-                                 self.acoustic_cols_used, self.longest_acoustic)
-        self.test_prep = DataPrep(self.d_type, test_data, self.paths['test'], self.fset,
-                                  self.acoustic_cols_used, self.longest_acoustic)
+        self.train_prep = DataPrep(self.d_type, train_data, self.paths['train'],
+                                   self.tokenizer, self.fset,
+                                   self.acoustic_cols_used, self.longest_utt,
+                                   self.longest_acoustic, glove, "train")
+        self.dev_prep = DataPrep(self.d_type, dev_data, self.paths['dev'],
+                                 self.tokenizer, self.fset,
+                                 self.acoustic_cols_used, self.longest_utt,
+                                 self.longest_acoustic, glove, "dev")
+        self.test_prep = DataPrep(self.d_type, test_data, self.paths['test'],
+                                  self.tokenizer, self.fset,
+                                  self.acoustic_cols_used, self.longest_utt,
+                                  self.longest_acoustic, glove, "test")
 
 
 class DataPrep:
@@ -90,12 +100,19 @@ class DataPrep:
             data_type,
             data,
             data_path,
+            tokenizer,
             feature_set,
             acoustic_cols_used,
-            longest_acoustic
+            longest_utt,
+            longest_acoustic,
+            glove,
+            partition
     ):
         # set data type
         self.d_type = data_type
+
+        # set tokenizer
+        self.tokenizer = tokenizer
 
         # get acoustic dict and lengths
         self.acoustic_dict, self.acoustic_lengths = make_acoustic_dict(data_path,
@@ -112,10 +129,28 @@ class DataPrep:
                                                       add_avging=False)
 
         # use acoustic sets to get data tensors
+        self.data_tensors = self.make_data_tensors(data, longest_utt, glove)
 
         # get acoustic means
+        if partition == "train":
+            self.acoustic_means, self.acoustic_stdev = get_acoustic_means(self.acoustic_tensor)
 
-        # combine xs and ys
+    def combine_xs_and_ys(self):
+        """
+        Combine the xs and y data
+        :return: all data as list of tuples of tensors
+        """
+        if self.d_type == "meld":
+            pass
+        elif self.d_type == "mustard":
+            pass
+        elif self.d_type == "chalearn" or self.d_type == "firstimpr":
+            combine_xs_and_ys_chalearn(self.acoustic_tensor, self.acoustic_dict,
+                                       self.acoustic_means, self.acoustic_stdev)
+        elif self.d_type == "ravdess":
+            pass
+        elif self.d_type == "cdc":
+            pass
 
     def get_all_used_ids(self, text_data, acoustic_dict):
         """
@@ -189,41 +224,35 @@ class DataPrep:
 
         return all_acoustic
 
-    def make_data_tensors(self, text_data, glove):
+    def make_data_tensors(self, text_data, longest_utt, glove):
         """
         Prepare tensors of utterances, genders, gold labels
         :param text_data: the df containing the text, gold, etc
+        :param longest_utt: length of longest utterance
         :param glove: an instance of class Glove
         :return:
         """
-        all_utterances = []
-        all_speakers = []
-        all_genders = []
-        all_ids = []
-        all_ys = {}
-
-        utt_lengths = []
-
         if self.d_type == "meld":
-            pass
+            data_tensor_dict = make_data_tensors_meld(text_data, longest_utt, glove)
         elif self.d_type == "mustard":
-            pass
+            data_tensor_dict = make_data_tensors_mustard(text_data, longest_utt, glove)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
-            pass
+            data_tensor_dict = make_data_tensors_chalearn(text_data, longest_utt, glove)
         elif self.d_type == "ravdess":
             pass
+            #data_tensor_dict = make_data_tensors_ravdess(text_data, longest_utt, glove)
         elif self.d_type == "cdc":
             pass
+            #data_tensor_dict = make_data_tensors_cdc(text_data, longest_utt, glove)
 
-        for idx, row in text_data.iterrows():
-
-            pass
+        return data_tensor_dict
 
 
 def get_longest_utt(data, tokenizer):
     """
     Get the length of longest utterance in the dataset
     :param data: a pandas df containing all utterances
+    :param tokenizer: a tokenizer
     :return: length of longest utterance
     """
     # todo: move this up if needed in other places
@@ -242,6 +271,7 @@ def get_paths(data_type, data_path):
     Get the train, dev, test paths based on the data type
     Used with prepartitioned data (meld, firstimpr)
     :param data_type: the name of the dataset of interest
+    :param data_path: the base path to dataset
     :return: train_path, dev_path, test_path - string paths
     """
     train = f"{data_path}/train"
@@ -267,7 +297,6 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     """
     print(f"Starting acoustic dict at {datetime.datetime.now()}")
     acoustic_dict = {}
-    # todo: is this the right type for this?
     acoustic_lengths = {}
 
     # get the acoustic features files
@@ -305,7 +334,8 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
 
 
 
-
+# todo: delete this after done testing
+#   this repo should have no 'main' functions
 if __name__ == "__main__":
     chalearn = DataPrep("chalearn", "../../datasets/multimodal_datasets/Chalearn",
                         "IS10", "gold_and_utts.tsv")
