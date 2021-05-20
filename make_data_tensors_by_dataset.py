@@ -3,10 +3,13 @@ from utils.data_prep_helpers import clean_up_word
 import torch
 from torch import nn
 
-def make_data_tensors_meld(text_data, longest_utt, glove, tokenizer):
+
+def make_data_tensors_meld(text_data, used_utts_list, longest_utt,
+                           glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
+    :param used_utts_list: a list of all utterances with acoustic data
     :param longest_utt: length of longest utt
     :param glove: an instance of class Glove
     :param tokenizer: a tokenizer
@@ -19,29 +22,32 @@ def make_data_tensors_meld(text_data, longest_utt, glove, tokenizer):
                 "all_audio_ids": [], }
 
     for idx, row in text_data.iterrows():
-        # get audio id
-        all_data["all_audio_ids"].append(row["DiaID_UttID"])
+        # check if this item has acoustic data
+        dia_num, utt_num = row["DiaID_UttID"].split("_")[:2]
+        if (dia_num, utt_num) in used_utts_list:
+            # get audio id
+            all_data["all_audio_ids"].append(row["DiaID_UttID"])
 
-        # create utterance-level holders
-        utts = [0] * longest_utt
+            # create utterance-level holders
+            utts = [0] * longest_utt
 
-        # get values from row
-        utt = tokenizer(clean_up_word(str(row['utterance'])))
-        all_data["utt_lengths"].append(len(utt))
+            # get values from row
+            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            all_data["utt_lengths"].append(len(utt))
 
-        spk_id = row["Speaker"]
-        emo = row["Emotion"]
-        sent = row["Sentiment"]
+            spk_id = row["Speaker"]
+            emo = row["Emotion"]
+            sent = row["Sentiment"]
 
-        # convert words to indices for glove
-        utt_indexed = glove.index(utt)
-        for i, item in enumerate(utt_indexed):
-            utts[i] = item
+            # convert words to indices for glove
+            utt_indexed = glove.index(utt)
+            for i, item in enumerate(utt_indexed):
+                utts[i] = item
 
-        all_data["all_utts"].append(torch.tensor(utts))
-        all_data["all_speakers"].append([spk_id])
-        all_data["all_emotions"].append(emo)
-        all_data["all_sentiments"].append(sent)
+            all_data["all_utts"].append(torch.tensor(utts))
+            all_data["all_speakers"].append([spk_id])
+            all_data["all_emotions"].append(emo)
+            all_data["all_sentiments"].append(sent)
 
     # create pytorch tensors for each
     all_data["all_speakers"] = torch.tensor(all_data["all_speakers"])
@@ -56,10 +62,12 @@ def make_data_tensors_meld(text_data, longest_utt, glove, tokenizer):
     return all_data
 
 
-def make_data_tensors_mustard(text_data, longest_utt, glove, tokenizer):
+def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
+                              glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
+    :param used_utts_list: a list of all utts with acoustic data
     :param longest_utt: length of longest utt
     :param glove: an instance of class Glove
     :param tokenizer: a tokenizer
@@ -72,29 +80,32 @@ def make_data_tensors_mustard(text_data, longest_utt, glove, tokenizer):
                 "all_audio_ids": [], }
 
     for idx, row in text_data.iterrows():
-        # get audio id
-        all_data["all_audio_ids"].append(row["clip_id"])
+        # check if this is in the list
+        if row["clip_id"] in used_utts_list:
 
-        # create utterance-level holders
-        utts = [0] * longest_utt
+            # get audio id
+            all_data["all_audio_ids"].append(row["clip_id"])
 
-        # get values from row
-        utt = tokenizer(clean_up_word(str(row['utterance'])))
-        all_data["utt_lengths"].append(len(utt))
+            # create utterance-level holders
+            utts = [0] * longest_utt
 
-        spk_id = row["speaker"]
-        gend_id = row["gender"]
-        sarc = row["sarcasm"]
+            # get values from row
+            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            all_data["utt_lengths"].append(len(utt))
 
-        # convert words to indices for glove
-        utt_indexed = glove.index(utt)
-        for i, item in enumerate(utt_indexed):
-            utts[i] = item
+            spk_id = row["speaker"]
+            gend_id = row["gender"]
+            sarc = row["sarcasm"]
 
-        all_data["all_utts"].append(torch.tensor(utts))
-        all_data["all_speakers"].append(spk_id)
-        all_data["all_genders"].append(gend_id)
-        all_data["all_sarcasm"].append(sarc)
+            # convert words to indices for glove
+            utt_indexed = glove.index(utt)
+            for i, item in enumerate(utt_indexed):
+                utts[i] = item
+
+            all_data["all_utts"].append(torch.tensor(utts))
+            all_data["all_speakers"].append(spk_id)
+            all_data["all_genders"].append(gend_id)
+            all_data["all_sarcasm"].append(sarc)
 
     # create pytorch tensors for each
     all_data["all_speakers"] = torch.tensor(all_data["all_speakers"])
@@ -109,10 +120,12 @@ def make_data_tensors_mustard(text_data, longest_utt, glove, tokenizer):
     return all_data
 
 
-def make_data_tensors_chalearn(text_data, longest_utt, glove, tokenizer):
+def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
+                               glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
+    :param used_utts_list: the list of all utts with acoustic data
     :param longest_utt: length of longest utt
     :param glove: an instance of class Glove
     :param tokenizer: a tokenizer
@@ -127,29 +140,33 @@ def make_data_tensors_chalearn(text_data, longest_utt, glove, tokenizer):
                 "all_audio_ids": [], "utt_lengths": []}
 
     for idx, row in text_data.iterrows():
-        # get audio id
-        all_data["all_audio_ids"].append(row["file"])
+        # check if this item has acoustic data
+        audio_name = row["file"].split(".mp4")[0]
+        if audio_name in used_utts_list:
 
-        # create utterance-level holders
-        utts = [0] * longest_utt
+            # get audio id
+            all_data["all_audio_ids"].append(row["file"])
 
-        # get values from row
-        utt = tokenizer(clean_up_word(str(row['utterance'])))
-        all_data["utt_lengths"].append(len(utt))
+            # create utterance-level holders
+            utts = [0] * longest_utt
 
-        spk_id = row["speaker"]
-        gend_id = row["gender"]
-        sarc = row["sarcasm"]
+            # get values from row
+            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            all_data["utt_lengths"].append(len(utt))
 
-        # convert words to indices for glove
-        utt_indexed = glove.index(utt)
-        for i, item in enumerate(utt_indexed):
-            utts[i] = item
+            spk_id = row["speaker"]
+            gend_id = row["gender"]
+            sarc = row["sarcasm"]
 
-        all_data["all_utts"].append(torch.tensor(utts))
-        all_data["all_speakers"].append(spk_id)
-        all_data["all_genders"].append(gend_id)
-        all_data["all_sarcasm"].append(sarc)
+            # convert words to indices for glove
+            utt_indexed = glove.index(utt)
+            for i, item in enumerate(utt_indexed):
+                utts[i] = item
+
+            all_data["all_utts"].append(torch.tensor(utts))
+            all_data["all_speakers"].append(spk_id)
+            all_data["all_genders"].append(gend_id)
+            all_data["all_sarcasm"].append(sarc)
 
     # create pytorch tensors for each
     all_data["all_speakers"] = torch.tensor(all_data["all_speakers"])
