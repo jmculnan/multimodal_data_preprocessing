@@ -123,11 +123,6 @@ class MeldPrep:
 
         # get length of longest acoustic dataframe
         self.longest_acoustic = 1500
-        # self.longest_acoustic = get_max_num_acoustic_frames(
-        #     list(self.train_dict.values())
-        #     # + list(self.dev_dict.values())
-        #     # + list(self.test_dict.values())
-        # )
 
         print("Finalizing acoustic organization for meld")
 
@@ -194,11 +189,6 @@ class MeldPrep:
             self.test_data_file, self.test_usable_utts, glove
         )
 
-        # print(len(self.train_y_emo))
-        # print(len(self.train_y_sent))
-        # print(self.train_y_emo[0])
-        # print(self.train_y_sent[0])
-
         # set emotion and sentiment weights
         self.emotion_weights = get_class_weights(self.train_y_emo)
         self.sentiment_weights = get_class_weights(self.train_y_sent)
@@ -206,8 +196,6 @@ class MeldPrep:
         # acoustic feature normalization based on train
         print("starting acoustic means for meld")
         self.all_acoustic_means, self.all_acoustic_deviations = get_acoustic_means(self.train_acoustic)
-        # self.all_acoustic_means = self.train_acoustic.mean(dim=0, keepdim=False)
-        # self.all_acoustic_deviations = self.train_acoustic.std(dim=0, keepdim=False)
 
         print("starting male acoustic means for meld")
         self.male_acoustic_means, self.male_deviations = get_gender_avgs(
@@ -612,21 +600,6 @@ def make_acoustic_dict_meld(
 #             all_acoustic.append(torch.tensor(acoustic_holder))
 #
 #     return all_acoustic, usable_utts
-
-def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard"):
-    """
-    Run feature extraction from audio_extraction.py for meld
-    """
-    # save all files in the directory
-    for wfile in os.listdir(audio_path):
-        if dataset == "meld":
-            save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
-        else:
-            save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
 
 
 if __name__ == "__main__":
