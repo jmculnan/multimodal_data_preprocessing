@@ -13,7 +13,7 @@ import torch
 from torch import nn
 from torchtext.data import get_tokenizer
 
-from combine_xs_and_ys_by_dataset import combine_xs_and_ys_chalearn
+from combine_xs_and_ys_by_dataset import combine_xs_and_ys_chalearn, combine_xs_and_ys_meld, combine_xs_and_ys_mustard
 from utils.audio_extraction import (ExtractAudio,
                                     convert_to_wav,
                                     run_feature_extraction
@@ -28,8 +28,8 @@ from utils.data_prep_helpers import (
     clean_up_word,
     get_max_num_acoustic_frames,
     transform_acoustic_item,
-    get_acoustic_means
-    )
+    get_acoustic_means,
+    create_data_folds)
 
 
 class StandardPrep:
@@ -80,14 +80,83 @@ class StandardPrep:
                                    self.tokenizer, self.fset,
                                    self.acoustic_cols_used, self.longest_utt,
                                    self.longest_acoustic, glove, "train")
+
         self.dev_prep = DataPrep(self.d_type, dev_data, self.paths['dev'],
                                  self.tokenizer, self.fset,
                                  self.acoustic_cols_used, self.longest_utt,
                                  self.longest_acoustic, glove, "dev")
+        self.dev_prep.update_acoustic_means(self.train_prep.acoustic_means,
+                                            self.train_prep.acoustic_stdev)
+
         self.test_prep = DataPrep(self.d_type, test_data, self.paths['test'],
                                   self.tokenizer, self.fset,
                                   self.acoustic_cols_used, self.longest_utt,
                                   self.longest_acoustic, glove, "test")
+        self.test_prep.update_acoustic_means(self.train_prep.acoustic_means,
+                                             self.train_prep.acoustic_stdev)
+
+
+class SelfSplitPrep:
+    """
+    A class for when data must be manually partitioned
+    """
+    def __init__(
+            self,
+            data_type,
+            data_path,
+            feature_set,
+            utterance_fname,
+            glove,
+            use_cols=None,
+            train_prop=0.6,
+            test_prop=0.2
+    ):
+        # set path to data files
+        self.d_type = data_type.lower()
+        self.path = data_path
+
+        # set list of acoustic feature columns to extract
+        #   or leave as None to extract all
+        self.acoustic_cols_used = use_cols
+
+        # set feature set
+        self.fset = feature_set
+
+        # read in data
+        all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+
+        train_data, dev_data, test_data = create_data_folds(
+                all_data, train_prop, test_prop)
+
+        # set tokenizer
+        self.tokenizer = get_tokenizer("basic_english")
+
+        # get longest utt
+        self.longest_utt = get_longest_utt(all_data, self.tokenizer)
+
+        # set longest accepted acoustic file
+        self.longest_acoustic = 1500
+
+        # set DataPrep instance for each partition
+        self.train_prep = DataPrep(self.d_type, train_data, self.path,
+                                   self.tokenizer, self.fset,
+                                   self.acoustic_cols_used, self.longest_utt,
+                                   self.longest_acoustic, glove, "train")
+
+        self.dev_prep = DataPrep(self.d_type, dev_data, self.path,
+                                 self.tokenizer, self.fset,
+                                 self.acoustic_cols_used, self.longest_utt,
+                                 self.longest_acoustic, glove, "dev")
+        self.dev_prep.update_acoustic_means(self.train_prep.acoustic_means,
+                                            self.train_prep.acoustic_stdev)
+
+        self.test_prep = DataPrep(self.d_type, test_data, self.path,
+                                  self.tokenizer, self.fset,
+                                  self.acoustic_cols_used, self.longest_utt,
+                                  self.longest_acoustic, glove, "test")
+        self.test_prep.update_acoustic_means(self.train_prep.acoustic_means,
+                                             self.train_prep.acoustic_stdev)
+
 
 
 class DataPrep:
@@ -132,8 +201,32 @@ class DataPrep:
         self.data_tensors = self.make_data_tensors(data, longest_utt, glove)
 
         # get acoustic means
+        self.acoustic_means = 0
+        self.acoustic_stdev = 0
+        # if train partition
         if partition == "train":
             self.acoustic_means, self.acoustic_stdev = get_acoustic_means(self.acoustic_tensor)
+
+        # add pred type if needed
+        self.pred_type = None
+
+    def add_pred_type(self, ptype):
+        """
+        Add a prediction type for chalearn
+        Options: max_class, high-low/binary, high-med-low/ternary
+        :param ptype: string name of prediction type
+        :return:
+        """
+        self.pred_type = ptype
+
+    def update_acoustic_means(self, means, stdev):
+        """
+        If you are not working with train partition, update acoustic means and stdev
+            from train to do this correctly
+        :return:
+        """
+        self.acoustic_means = means
+        self.acoustic_stdev = stdev
 
     def combine_xs_and_ys(self):
         """
@@ -141,12 +234,17 @@ class DataPrep:
         :return: all data as list of tuples of tensors
         """
         if self.d_type == "meld":
-            pass
+            combine_xs_and_ys_meld(self.data_tensors, self.acoustic_tensor,
+                                   self.acoustic_lengths, self.acoustic_means,
+                                   self.acoustic_stdev)
         elif self.d_type == "mustard":
-            pass
+            combine_xs_and_ys_mustard(self.data_tensors, self.acoustic_tensor,
+                                   self.acoustic_lengths, self.acoustic_means,
+                                   self.acoustic_stdev)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
-            combine_xs_and_ys_chalearn(self.acoustic_tensor, self.acoustic_dict,
-                                       self.acoustic_means, self.acoustic_stdev)
+            combine_xs_and_ys_chalearn(self.data_tensors, self.acoustic_tensor,
+                                   self.acoustic_lengths, self.acoustic_means,
+                                   self.acoustic_stdev, pred_type=self.pred_type)
         elif self.d_type == "ravdess":
             pass
         elif self.d_type == "cdc":
