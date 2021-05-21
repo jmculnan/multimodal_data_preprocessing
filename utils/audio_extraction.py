@@ -314,7 +314,7 @@ def load_feature_csv(audio_csv):
     return pd.read_csv(audio_csv, sep=";")
 
 
-def drop_cols(self, dataframe, to_drop):
+def drop_cols(dataframe, to_drop):
     """
     To drop columns from pandas dataframe
     used in get_features_dict
