@@ -32,7 +32,7 @@ def combine_xs_and_ys_meld(data_dict, acoustic_data, acoustic_lengths,
 
 
 def combine_xs_and_ys_mustard(data_dict, acoustic_data, acoustic_lengths,
-                               acoustic_means, acoustic_stdev):
+                               acoustic_means, acoustic_stdev, speaker2idx):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
     """
@@ -46,7 +46,7 @@ def combine_xs_and_ys_mustard(data_dict, acoustic_data, acoustic_lengths,
             (
                 item_transformed,
                 data_dict["all_utts"][i],
-                data_dict["all_speakers"][i],
+                speaker2idx[data_dict["all_speakers"][i]],
                 0,  # fixme: genders temporarily removed
                 data_dict["all_sarcasm"][i],
                 data_dict["all_audio_ids"][i],

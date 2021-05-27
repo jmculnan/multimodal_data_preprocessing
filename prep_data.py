@@ -10,6 +10,7 @@ import sys
 from collections import OrderedDict
 
 import torch
+from sklearn.utils import compute_class_weight
 from torch import nn
 from torchtext.data import get_tokenizer
 
@@ -28,7 +29,7 @@ from utils.data_prep_helpers import (
     clean_up_word,
     transform_acoustic_item,
     get_acoustic_means,
-    create_data_folds)
+    create_data_folds, get_speaker_to_index_dict, create_data_folds_list)
 
 
 class StandardPrep:
@@ -125,6 +126,10 @@ class SelfSplitPrep:
         self.d_type = data_type.lower()
         self.path = data_path
 
+        # set train and test proportions
+        self.train_prop = train_prop
+        self.test_prop = test_prop
+
         # set list of acoustic feature columns to extract
         #   or leave as None to extract all
         self.acoustic_cols_used = use_cols
@@ -133,39 +138,47 @@ class SelfSplitPrep:
         self.fset = feature_set
 
         # read in data
-        all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+        self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
 
-        train_data, dev_data, test_data = create_data_folds(
-                all_data, train_prop, test_prop)
+        # get dict of all speakers to use
+        if data_type == "mustard":
+            all_speakers = set(self.all_data["speaker"])
+            speaker2idx = get_speaker_to_index_dict(all_speakers)
+        else:
+            speaker2idx = None
 
         # set tokenizer
         self.tokenizer = get_tokenizer("basic_english")
 
         # get longest utt
-        self.longest_utt = get_longest_utt(all_data, self.tokenizer)
+        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer)
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
 
         # set DataPrep instance for each partition
-        self.train_prep = DataPrep(self.d_type, train_data, self.path,
+        self.train_prep = DataPrep(self.d_type, self.all_data, self.path,
                                    self.tokenizer, self.fset,
                                    self.acoustic_cols_used, self.longest_utt,
                                    self.longest_acoustic, glove, "train")
 
-        self.dev_prep = DataPrep(self.d_type, dev_data, self.path,
-                                 self.tokenizer, self.fset,
-                                 self.acoustic_cols_used, self.longest_utt,
-                                 self.longest_acoustic, glove, "dev")
-        self.dev_prep.update_acoustic_means(self.train_prep.acoustic_means,
-                                            self.train_prep.acoustic_stdev)
+        self.data = self.train_prep.combine_xs_and_ys(speaker2idx)
 
-        self.test_prep = DataPrep(self.d_type, test_data, self.path,
-                                  self.tokenizer, self.fset,
-                                  self.acoustic_cols_used, self.longest_utt,
-                                  self.longest_acoustic, glove, "test")
-        self.test_prep.update_acoustic_means(self.train_prep.acoustic_means,
-                                             self.train_prep.acoustic_stdev)
+    def get_data_folds(self):
+        train_data, dev_data, test_data = create_data_folds_list(
+                self.data, self.train_prop, self.test_prop)
+        return train_data, dev_data, test_data
+
+    def get_updated_class_weights(self, train_ys):
+        """
+        Get updated class weights
+        Because DataPrep assumes you only enter train set
+        :return:
+        """
+        labels = [int(y) for y in train_ys]
+        classes = sorted(list(set(labels)))
+        weights = compute_class_weight("balanced", classes, labels)
+        return torch.tensor(weights, dtype=torch.float)
 
 
 class DataPrep:
@@ -240,7 +253,7 @@ class DataPrep:
         self.acoustic_means = means
         self.acoustic_stdev = stdev
 
-    def combine_xs_and_ys(self):
+    def combine_xs_and_ys(self, speaker2idx=None):
         """
         Combine the xs and y data
         :return: all data as list of tuples of tensors
@@ -252,7 +265,7 @@ class DataPrep:
         elif self.d_type == "mustard":
             combined = combine_xs_and_ys_mustard(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,
-                                   self.acoustic_stdev)
+                                   self.acoustic_stdev, speaker2idx)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             combined = combine_xs_and_ys_chalearn(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,

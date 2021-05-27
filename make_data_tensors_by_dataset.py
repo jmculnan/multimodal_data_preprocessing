@@ -76,6 +76,7 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
     """
     # create holders for the data
     all_data = {"all_utts": [], "all_speakers": [],
+                "all_genders": [],
                 "all_sarcasm": [], "utt_lengths": [],
                 "all_audio_ids": [], }
 
@@ -108,8 +109,7 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
             all_data["all_sarcasm"].append(sarc)
 
     # create pytorch tensors for each
-    all_data["all_speakers"] = torch.tensor(all_data["all_speakers"])
-    all_data["all_emotions"] = torch.tensor(all_data["all_emotions"])
+    all_data["all_genders"] = torch.tensor(all_data["all_genders"])
     all_data["all_sarcasm"] = torch.tensor(all_data["all_sarcasm"])
 
     # pad and transpose utterance sequences
