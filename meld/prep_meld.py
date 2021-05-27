@@ -1,10 +1,5 @@
-import argparse
-import pickle
-
 from prep_data import *
 from utils.data_prep_helpers import Glove, make_glove_dict
-from combine_xs_and_ys_by_dataset import combine_xs_and_ys_meld
-from make_data_tensors_by_dataset import make_data_tensors_meld
 
 
 def prep_meld_data(
@@ -35,17 +30,13 @@ def prep_meld_data(
         use_cols=features_to_use
     )
 
+    print("Now preparing training data")
     train_data = meld_prep.train_prep.combine_xs_and_ys()
+    print("Now preparing development data")
     dev_data = meld_prep.dev_prep.combine_xs_and_ys()
+    print("Now preparing test data")
     test_data = meld_prep.test_prep.combine_xs_and_ys()
 
     class_weights = meld_prep.train_prep.class_weights
 
     return train_data, dev_data, test_data, class_weights
-
-
-if __name__ == "__main__":
-    train, dev, test, weights = prep_meld_data()
-
-    print(weights)
-    print(type(train))

@@ -66,8 +66,14 @@ class StandardPrep:
         else:
             sep = "\t"
         train_data = pd.read_csv(f"{self.paths['train']}/{utterance_fname}", sep=sep)
+        train_data.columns = train_data.columns.str.lower()
+
         dev_data = pd.read_csv(f"{self.paths['dev']}/{utterance_fname}", sep=sep)
+        dev_data.columns = dev_data.columns.str.lower()
+
         test_data = pd.read_csv(f"{self.paths['test']}/{utterance_fname}", sep=sep)
+        test_data.columns = test_data.columns.str.lower()
+
         all_data = pd.concat([train_data, dev_data, test_data], axis=0)
 
         # set tokenizer
@@ -187,7 +193,7 @@ class DataPrep:
         self.tokenizer = tokenizer
 
         # get acoustic dict and lengths
-        self.acoustic_dict, self.acoustic_lengths = make_acoustic_dict(data_path,
+        self.acoustic_dict, self.acoustic_lengths_dict = make_acoustic_dict(data_path,
                                                                        data_type,
                                                                        feature_set,
                                                                        acoustic_cols_used)
@@ -196,10 +202,10 @@ class DataPrep:
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
 
         # get acoustic set for train, dev, test partitions
-        self.acoustic_tensor = self.make_acoustic_set(self.acoustic_dict,
-                                                      longest_acoustic,
-                                                      add_avging=False)
-
+        self.acoustic_tensor, self.acoustic_lengths = self.make_acoustic_set(self.acoustic_dict,
+                                                                             self.acoustic_lengths_dict,
+                                                                             longest_acoustic,
+                                                                             add_avging=False)
         # use acoustic sets to get data tensors
         self.data_tensors = self.make_data_tensors(data, longest_utt, glove)
 
@@ -240,21 +246,23 @@ class DataPrep:
         :return: all data as list of tuples of tensors
         """
         if self.d_type == "meld":
-            combine_xs_and_ys_meld(self.data_tensors, self.acoustic_tensor,
+            combined = combine_xs_and_ys_meld(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,
                                    self.acoustic_stdev)
         elif self.d_type == "mustard":
-            combine_xs_and_ys_mustard(self.data_tensors, self.acoustic_tensor,
+            combined = combine_xs_and_ys_mustard(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,
                                    self.acoustic_stdev)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
-            combine_xs_and_ys_chalearn(self.data_tensors, self.acoustic_tensor,
+            combined = combine_xs_and_ys_chalearn(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,
                                    self.acoustic_stdev, pred_type=self.pred_type)
         elif self.d_type == "ravdess":
             pass
         elif self.d_type == "cdc":
             pass
+
+        return combined
 
     def get_all_used_ids(self, text_data, acoustic_dict):
         """
@@ -263,7 +271,7 @@ class DataPrep:
         """
         # get list of valid dialogues/utterances
         if self.d_type == "meld":
-            valid_ids = text_data["DiaID_UttID"].tolist()
+            valid_ids = text_data["diaid_uttid"].tolist()
             valid_ids = [(item.split("_")[0], item.split("_")[1]) for item in valid_ids]
         elif self.d_type == "mustard":
             valid_ids = text_data["clip_id"].tolist()
@@ -283,6 +291,7 @@ class DataPrep:
     def make_acoustic_set(
             self,
             acoustic_dict,
+            acoustic_lengths_dict,
             longest_acoustic=1500,
             add_avging=True,
     ):
@@ -297,12 +306,14 @@ class DataPrep:
 
         # set holders for acoustic data
         all_acoustic = []
+        ordered_acoustic_lengths = []
 
         # for all items with audio + gold label
         for item in self.used_ids:
 
             # pull out the acoustic feats df
             acoustic_data = acoustic_dict[item]
+            ordered_acoustic_lengths.append(acoustic_lengths_dict[item])
 
             if not add_avging:
                 acoustic_data = acoustic_data[acoustic_data.index <= longest_acoustic]
@@ -326,7 +337,7 @@ class DataPrep:
 
         print(f"Acoustic set made at {datetime.datetime.now()}")
 
-        return all_acoustic
+        return all_acoustic, ordered_acoustic_lengths
 
     def make_data_tensors(self, text_data, longest_utt, glove):
         """
@@ -337,11 +348,11 @@ class DataPrep:
         :return:
         """
         if self.d_type == "meld":
-            data_tensor_dict = make_data_tensors_meld(text_data, longest_utt, glove)
+            data_tensor_dict = make_data_tensors_meld(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
         elif self.d_type == "mustard":
-            data_tensor_dict = make_data_tensors_mustard(text_data, longest_utt, glove)
+            data_tensor_dict = make_data_tensors_mustard(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
-            data_tensor_dict = make_data_tensors_chalearn(text_data, longest_utt, glove)
+            data_tensor_dict = make_data_tensors_chalearn(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
         elif self.d_type == "ravdess":
             pass
             #data_tensor_dict = make_data_tensors_ravdess(text_data, longest_utt, glove)
@@ -359,12 +370,7 @@ def get_longest_utt(data, tokenizer):
     :param tokenizer: a tokenizer
     :return: length of longest utterance
     """
-    # todo: move this up if needed in other places
-    data.columns = data.columns.str.lower()
-    try:
-        all_utts = data["utterance"].tolist()
-    except KeyError:
-        all_utts = data["Utterance"].tolist()
+    all_utts = data["utterance"].tolist()
 
     # tokenize, clean up, and count all items in dataset
     item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]
