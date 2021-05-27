@@ -26,7 +26,6 @@ from utils.data_prep_helpers import (
     get_class_weights,
     get_gender_avgs,
     clean_up_word,
-    get_max_num_acoustic_frames,
     transform_acoustic_item,
     get_acoustic_means,
     create_data_folds)
@@ -43,6 +42,7 @@ class StandardPrep:
             feature_set,
             utterance_fname,
             glove,
+            transcription_type="gold",
             use_cols=None,
     ):
         # set path to data files
@@ -61,9 +61,13 @@ class StandardPrep:
         self.paths = {"train": train_path, "dev": dev_path, "test": test_path}
 
         # read in each partition
-        train_data = pd.read_csv(f"{self.paths['train']}/{utterance_fname}", sep="\t")
-        dev_data = pd.read_csv(f"{self.paths['dev']}/{utterance_fname}", sep="\t")
-        test_data = pd.read_csv(f"{self.paths['test']}/{utterance_fname}", sep="\t")
+        if data_type == "meld" and transcription_type == "gold":
+            sep = ","
+        else:
+            sep = "\t"
+        train_data = pd.read_csv(f"{self.paths['train']}/{utterance_fname}", sep=sep)
+        dev_data = pd.read_csv(f"{self.paths['dev']}/{utterance_fname}", sep=sep)
+        test_data = pd.read_csv(f"{self.paths['test']}/{utterance_fname}", sep=sep)
         all_data = pd.concat([train_data, dev_data, test_data], axis=0)
 
         # set tokenizer
@@ -357,7 +361,10 @@ def get_longest_utt(data, tokenizer):
     """
     # todo: move this up if needed in other places
     data.columns = data.columns.str.lower()
-    all_utts = data["utterance"].tolist()
+    try:
+        all_utts = data["utterance"].tolist()
+    except KeyError:
+        all_utts = data["Utterance"].tolist()
 
     # tokenize, clean up, and count all items in dataset
     item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]

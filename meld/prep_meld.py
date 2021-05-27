@@ -2,6 +2,7 @@ import argparse
 import pickle
 
 from prep_data import *
+from utils.data_prep_helpers import Glove, make_glove_dict
 from combine_xs_and_ys_by_dataset import combine_xs_and_ys_meld
 from make_data_tensors_by_dataset import make_data_tensors_meld
 
@@ -10,11 +11,12 @@ def prep_meld_data(
         data_path="../../datasets/multimodal_datasets/meld_formatted",
         feature_set="IS13",
         transcription_type="gold",
-        glove_filepath="../asist-speech/data/glove.300d.short.punct.pickle",
+        glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
         features_to_use=None
 ):
     # load glove
-    glove = pickle.load(glove_filepath)
+    glove_dict = make_glove_dict(glove_filepath)
+    glove = Glove(glove_dict)
 
     # holder for name of file containing utterance info
     if transcription_type.lower() == "gold":
@@ -29,6 +31,7 @@ def prep_meld_data(
         feature_set=feature_set,
         utterance_fname=utts_name,
         glove=glove,
+        transcription_type=transcription_type,
         use_cols=features_to_use
     )
 
@@ -39,3 +42,10 @@ def prep_meld_data(
     class_weights = meld_prep.train_prep.class_weights
 
     return train_data, dev_data, test_data, class_weights
+
+
+if __name__ == "__main__":
+    train, dev, test, weights = prep_meld_data()
+
+    print(weights)
+    print(type(train))
