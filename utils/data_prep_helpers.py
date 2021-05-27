@@ -387,7 +387,23 @@ def get_avg_vec(nested_list):
 # served in the loss function than in a sampler.  What you were returning below
 # seem to be counts, not weights.  These are automatically calculated by sklearn, and
 # apparently based off imbalanced logistic regression.  Let's see if they help!
-def get_class_weights(y_tensor):
+def get_class_weights(data_tensors_dict, data_type):
+    if data_type == "meld":
+        y_tensor = data_tensors_dict['all_emotions']
+    elif data_type == "mustard":
+        y_tensor = data_tensors_dict['all_sarcasm']
+    elif data_type == "chalearn" or data_type == "firstimpr":
+        ys = [[data_tensors_dict["all_extraversion"][i],
+              data_tensors_dict["all_neuroticism"][i],
+              data_tensors_dict["all_agreeableness"][i],
+              data_tensors_dict["all_openness"][i],
+              data_tensors_dict["all_conscientiousness"][i]] for
+              i, item in enumerate(data_tensors_dict["all_extraversion"])]
+        y_tensor = [item.index(max(item)) for item in ys]
+    else:
+        print("data type does not have associated ys to get class weights")
+        return None
+
     labels = [int(y) for y in y_tensor]
     classes = sorted(list(set(labels)))
     weights = compute_class_weight("balanced", classes, labels)

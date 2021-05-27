@@ -204,7 +204,10 @@ class DataPrep:
         self.acoustic_stdev = 0
         # if train partition
         if partition == "train":
+            # get means and stdev
             self.acoustic_means, self.acoustic_stdev = get_acoustic_means(self.acoustic_tensor)
+            # get class weights
+            self.class_weights = get_class_weights(self.data_tensors, self.d_type)
 
         # add pred type if needed
         self.pred_type = None
@@ -399,12 +402,12 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     # get the acoustic features files
     for feats_file in glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"):
         # read each file as a pandas df
-        if use_cols is not None:
-            feats = pd.read_csv(feats_file, usecols=use_cols, sep=";"
-            )
-        else:
+        if use_cols is None or (len(use_cols) == 1 and (use_cols[0].lower() == "none"
+                                                        or use_cols.lower() == "all")):
             feats = pd.read_csv(feats_file, sep=";")
             feats.drop(["name", "frameTime"], axis=1, inplace=True)
+        else:
+            feats = pd.read_csv(feats_file, usecols=use_cols, sep=";")
 
         # get the id
         feats_file_name = feats_file.split("/")[-1]
