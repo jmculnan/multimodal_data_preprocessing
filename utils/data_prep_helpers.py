@@ -60,8 +60,17 @@ class MultitaskObject(object):
     """
     An object to hold the data and meta-information for each of the datasets/tasks
     """
-    def __init__(self, train_data, dev_data, test_data, class_loss_func, task_num, binary=False,
-                 optimizer=None):
+
+    def __init__(
+        self,
+        train_data,
+        dev_data,
+        test_data,
+        class_loss_func,
+        task_num,
+        binary=False,
+        optimizer=None,
+    ):
         """
         train_data, dev_data, and test_data are DatumListDataset datasets
         """
@@ -87,8 +96,10 @@ class MultitaskTestObject(object):
     """
     An object to hold the data and meta-information for each of the datasets/tasks
     """
-    def __init__(self, test_data, class_loss_func, task_num, binary=False,
-                 optimizer=None):
+
+    def __init__(
+        self, test_data, class_loss_func, task_num, binary=False, optimizer=None
+    ):
         """
         train_data, dev_data, and test_data are DatumListDataset datasets
         """
@@ -106,61 +117,6 @@ class MultitaskTestObject(object):
         e.g. if weight == 1.5, loss = loss * 1.5
         """
         self.loss_multiplier = multiplier
-
-# todo: will we need this?
-# class BatchSchedulerSampler(torch.utils.data.sampler.Sampler):
-#     """
-#     iterate over tasks and provide a random batch per task in each mini-batch
-#     Slightly altered from: https://gist.github.com/bomri/d93da3e6f840bb93406f40a6590b9c48
-#     """
-#     def __init__(self, dataset, batch_size):
-#         self.dataset = dataset
-#         self.batch_size = batch_size
-#         self.number_of_datasets = len(dataset.datasets)
-#         self.largest_dataset_size = max([len(cur_dataset.samples) for cur_dataset in dataset.datasets])
-#
-#     def __len__(self):
-#         return self.batch_size * math.ceil(self.largest_dataset_size / self.batch_size) * len(self.dataset.datasets)
-#
-#     def __iter__(self):
-#         samplers_list = []
-#         sampler_iterators = []
-#         for dataset_idx in range(self.number_of_datasets):
-#             cur_dataset = self.dataset.datasets[dataset_idx]
-#             sampler = RandomSampler(cur_dataset)
-#             samplers_list.append(sampler)
-#             cur_sampler_iterator = sampler.__iter__()
-#             sampler_iterators.append(cur_sampler_iterator)
-#
-#         push_index_val = [0] + self.dataset.cumulative_sizes[:-1]
-#         step = self.batch_size * self.number_of_datasets
-#         samples_to_grab = self.batch_size
-#         # for this case we want to get all samples in dataset, this force us to resample from the smaller datasets
-#         epoch_samples = self.largest_dataset_size * self.number_of_datasets
-#
-#         final_samples_list = []  # this is a list of indexes from the combined dataset
-#         for _ in range(0, epoch_samples, step):
-#             for i in range(self.number_of_datasets):
-#                 cur_batch_sampler = sampler_iterators[i]
-#                 cur_samples = []
-#                 for _ in range(samples_to_grab):
-#                     try:
-#                         cur_sample_org = cur_batch_sampler.__next__()
-#                         cur_sample = cur_sample_org + push_index_val[i]
-#                         cur_samples.append(cur_sample)
-#                     except StopIteration:
-#                         # stop trying to add samples and continue on in the next dataset
-#                         break
-#                         # got to the end of iterator - restart the iterator and continue to get samples
-#                         # until reaching "epoch_samples"
-#                         # sampler_iterators[i] = samplers_list[i].__iter__()
-#                         # cur_batch_sampler = sampler_iterators[i]
-#                         # cur_sample_org = cur_batch_sampler.__next__()
-#                         # cur_sample = cur_sample_org + push_index_val[i]
-#                         # cur_samples.append(cur_sample)
-#                 final_samples_list.extend(cur_samples)
-#
-#         return iter(final_samples_list)
 
 
 class Glove(object):
@@ -280,9 +236,6 @@ class MinMaxScaleRange:
             return "The key {0} does not exist in maxes".format(key)
 
 
-# helper functions
-
-
 def clean_up_word(word):
     word = word.replace("\x92", "'")
     word = word.replace("\x91", " ")
@@ -296,28 +249,6 @@ def clean_up_word(word):
     word = word.replace("$", " $ ")
     word = word.replace("...", " ... ")
     word = word.replace("/", " / ")
-    # clean up word by putting in lowercase + removing punct
-    # punct = [
-    #     ",",
-    #     ".",
-    #     "!",
-    #     "?",
-    #     ";",
-    #     ":",
-    #     "'",
-    #     '"',
-    #     "-",
-    #     "$",
-    #     "’",
-    #     "…",
-    #     "[",
-    #     "]",
-    #     "(",
-    #     ")",
-    # ]
-    # for char in word:
-    #     if char in punct:
-    #         word = word.replace(char, " ")
     if word.strip() == "":
         word = "<UNK>"
     return word
@@ -387,29 +318,31 @@ def get_avg_vec(nested_list):
 # served in the loss function than in a sampler.  What you were returning below
 # seem to be counts, not weights.  These are automatically calculated by sklearn, and
 # apparently based off imbalanced logistic regression.  Let's see if they help!
-def get_class_weights(y_tensor):
+def get_class_weights(data_tensors_dict, data_type):
+    if data_type == "meld":
+        y_tensor = data_tensors_dict["all_emotions"]
+    elif data_type == "mustard":
+        y_tensor = data_tensors_dict["all_sarcasm"]
+    elif data_type == "chalearn" or data_type == "firstimpr":
+        ys = [
+            [
+                data_tensors_dict["all_extraversion"][i],
+                data_tensors_dict["all_neuroticism"][i],
+                data_tensors_dict["all_agreeableness"][i],
+                data_tensors_dict["all_openness"][i],
+                data_tensors_dict["all_conscientiousness"][i],
+            ]
+            for i, item in enumerate(data_tensors_dict["all_extraversion"])
+        ]
+        y_tensor = [item.index(max(item)) for item in ys]
+    else:
+        print("data type does not have associated ys to get class weights")
+        return None
+
     labels = [int(y) for y in y_tensor]
     classes = sorted(list(set(labels)))
     weights = compute_class_weight("balanced", classes, labels)
     return torch.tensor(weights, dtype=torch.float)
-
-
-# def get_class_weights(y_set):
-#     class_counts = {}
-#     y_values = y_set.tolist()
-
-#     num_labels = max(y_values) + 1
-
-#     for item in y_values:
-#         if item not in class_counts:
-#             class_counts[item] = 1
-#         else:
-#             class_counts[item] += 1
-#     class_weights = [0.0] * num_labels
-#     for k, v in class_counts.items():
-#         class_weights[k] = float(v)
-#     class_weights = torch.tensor(class_weights)
-#     return class_weights
 
 
 def get_gender_avgs(acoustic_data, gender_set, gender=1):
@@ -427,8 +360,6 @@ def get_gender_avgs(acoustic_data, gender_set, gender=1):
     all_items = torch.stack(all_items)
 
     mean, stdev = get_acoustic_means(all_items)
-    # mean = all_items.mean(dim=0, keepdim=False)
-    # stdev = all_items.std(dim=0, keepdim=False)
 
     return mean, stdev
 
@@ -439,11 +370,8 @@ def get_acoustic_means(acoustic_data):
     Should deal with 2-d and 3-d tensors
     param acoustic_data : the acoustic data in tensor format
     """
-    # print("Now starting to calculate acoustic means")
-    # print(acoustic_data.shape)
     if len(acoustic_data.shape) == 3:
         # reshape data + calculate means
-        # can do data.mean(dim=0).mean(dim=0), BUT runs out of memory
         dim_0 = acoustic_data.shape[0]
         dim_1 = acoustic_data.shape[1]
         dim_2 = acoustic_data.shape[2]
@@ -539,176 +467,6 @@ def get_speaker_to_index_dict(speaker_set):
     return speaker2idx
 
 
-def make_acoustic_dict(
-    acoustic_path,
-    f_end="_IS09_avgd.csv",
-    use_cols=None,
-    data_type="clinical",
-    files_to_get=None,
-):
-    """
-    makes a dict of (sid, call): data for use in ClinicalDataset objects
-    f_end: end of acoustic file names
-    use_cols: if set, should be a list [] of column names to include
-    """
-    acoustic_dict = {}
-    for f in os.listdir(acoustic_path):
-        if f.endswith(f_end):
-            if files_to_get is None or "_".join(f.split("_")[:2]) in files_to_get:
-                if use_cols is not None:
-                    try:
-                        feats = pd.read_csv(acoustic_path + "/" + f, usecols=use_cols)
-                    except ValueError:
-                        # todo: add warning
-                        feats = []
-                else:
-                    feats = pd.read_csv(acoustic_path + "/" + f)
-                if data_type == "asist":
-                    label = f.split("_")
-                    if label[1] == "mission":
-                        sid = label[0]
-                        mission_id = label[2]
-                    else:
-                        try:
-                            sid = int(label[1])
-                        except ValueError:
-                            sid = int(label[1].split("-")[1])
-                        mission_id = 0  # later iterations of this should have mission IDs
-                    acoustic_dict[(sid, mission_id)] = feats
-                    # callid = f.split("_")[2]  # asist data has format sid_mission_num
-                else:
-                    sid = f.split("_")[0]
-                    # clinical data has format sid_callid
-                    # meld has format dia_utt
-                    callid = f.split("_")[1]
-                    acoustic_dict[(sid, callid)] = feats
-    return acoustic_dict
-
-
-def make_acoustic_set(
-    text_path,
-    acoustic_dict,
-    data_type,
-    acoustic_length,
-    longest_acoustic,
-    add_avging=True,
-    avgd=False,
-):
-    """
-    Prep the acoustic data using the acoustic dict
-    :param text_path: FULL path to file containing utterances + labels
-    :param acoustic_dict:
-    :param add_avging: whether to average the feature sets
-    :return:
-    """
-    # read in the acoustic csv
-    if type(text_path) == str:
-        all_utts_df = pd.read_csv(text_path)
-    elif type(text_path) == pd.core.frame.DataFrame:
-        all_utts_df = text_path
-    else:
-        sys.exit("text_path is of unaccepted type.")
-
-    # get lists of valid dialogues and utterances
-    if data_type == "meld":
-        valid_dia_utt = all_utts_df["DiaID_UttID"].tolist()
-    else:
-        valid_dia_utt = all_utts_df["clip_id"].tolist()
-
-    # set holders for acoustic data
-    all_acoustic = []
-    usable_utts = []
-
-    # for all items with audio + gold label
-    for idx, item in enumerate(valid_dia_utt):
-        # print(idx, item)
-        # if that dialogue and utterance appears has an acoustic feats file
-        if (item.split("_")[0], item.split("_")[1]) in acoustic_dict.keys():
-            # print(f"{item} was found")
-            # pull out the acoustic feats dataframe
-            acoustic_data = acoustic_dict[(item.split("_")[0], item.split("_")[1])]
-
-            # add this dialogue + utt combo to the list of possible ones
-            usable_utts.append((item.split("_")[0], item.split("_")[1]))
-
-            if not avgd and not add_avging:
-                # set intermediate acoustic holder
-                acoustic_holder = torch.zeros((longest_acoustic, acoustic_length))
-
-                # add the acoustic features to the holder of features
-                for i, feats in enumerate(acoustic_data):
-                    # for now, using longest acoustic file in TRAIN only
-                    if i >= longest_acoustic:
-                        break
-                    # needed because some files allegedly had length 0
-                    for j, feat in enumerate(feats):
-                        acoustic_holder[i][j] = feat
-            else:
-                if avgd:
-                    acoustic_holder = torch.tensor(acoustic_data)
-                elif add_avging:
-                    # acoustic_holder = torch.mean(torch.tensor(acoustic_data), dim=0)
-                    # acoustic_holder = torch.mean(torch.tensor(acoustic_data)[10:min(1491, len(acoustic_data) - 9)], dim=0)
-                    # try skipping first and last 5%
-                    # acoustic_holder = torch.mean(torch.tensor(acoustic_data)[math.floor(data_len * 0.05):math.ceil(data_len * 0.95)], dim=0)
-                    # try skipping first and last 25% 15%
-                    data_len = len(acoustic_data)
-                    # acoustic_holder = torch.rand(76 * 3)
-                    # try just getting within the certain range of frames
-                    # acoustic_mean = torch.mean(torch.tensor(acoustic_data), dim=0)
-                    # acoustic_holder = torch.mean(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0)
-                    # acoustic_max = torch.max(torch.tensor(acoustic_data), dim=0).values
-                    # acoustic_min = torch.min(torch.tensor(acoustic_data), dim=0).values
-                    # acoustic_stdev = torch.std(torch.tensor(acoustic_data), dim=0)
-
-                    acoustic_mean = torch.mean(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0)
-                    acoustic_max = torch.max(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0).values
-                    acoustic_min = torch.min(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0).values
-                    # acoustic_med = torch.median(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0)[0]
-                    acoustic_stdev = torch.std(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)], dim=0)
-
-                    acoustic_meanplus = acoustic_mean + acoustic_stdev
-                    acoustic_meanminus = acoustic_mean - acoustic_stdev
-                    acoustic_holder = torch.cat((acoustic_mean, acoustic_max, acoustic_min, acoustic_meanplus, acoustic_meanminus), dim=0)
-                    # acoustic_holder = torch.cat((acoustic_mean, acoustic_meanplus, acoustic_meanminus), dim=0)
-                    # acoustic_holder = torch.cat((acoustic_mean, acoustic_max, acoustic_min), dim=0)
-
-                    # x = torch.tensor(acoustic_data)
-                    # print(acoustic_mean)
-                    # print(torch.mean(torch.tensor(acoustic_data)[:math.ceil(data_len * 0.75)], dim=0))
-                    # torch.mean(torch.tensor(acoustic_data)[math.floor(data_len * 0.25):math.ceil(data_len * 0.5)],
-                    #            dim=0)
-                    # print(x.shape)
-                    # print(x[5:25].shape)
-                    # print(x[:25].shape)
-                    # print(x[math.floor(data_len * 0.25):math.ceil(data_len * 0.75)].shape)
-                    # print(x[math.floor(data_len * 0.25):math.ceil(data_len * 0.5)].shape)
-                    # y = x[math.floor(data_len * 0.25):math.ceil(data_len * 0.5)].shape
-                    # print(torch.m)
-                    # print(x[:math.ceil(data_len * 0.75)].shape)
-                    # print(len(acoustic_data[:math.ceil(data_len * 0.75)]))
-                    # exit()
-
-
-
-                    # print(acoustic_holder.shape)
-                    # acoustic_holder = torch.cat((acoustic_means, acoustic_meanplus, acoustic_meanminus))
-                    # acoustic_holder = torch.cat((acoustic_means, acoustic_med, acoustic_stdev), 0)
-                    # get average of all non-padding vectors
-                    # nonzero_avg = get_nonzero_avg(torch.tensor(acoustic_data))
-                    # acoustic_holder = nonzero_avg
-
-            # add features as tensor to acoustic data
-            all_acoustic.append(acoustic_holder)
-
-    # pad the sequence and reshape it to proper format
-    # this is here to keep the formatting for acoustic RNN
-    all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
-    all_acoustic = all_acoustic.transpose(0, 1)
-
-    return all_acoustic, usable_utts
-
-
 def get_nonzero_avg(tensor):
     """
     Get the average of all non-padding vectors in a tensor
@@ -749,6 +507,18 @@ def scale_feature(value, min_val, max_val, lower=0.0, upper=1.0):
     else:
         # the result will be a value in [lower, upper]
         return lower + (upper - lower) * (value - min_val) / (max_val - min_val)
+
+
+def split_string_time(timestamp):
+    """
+    split "hh:mm:ss.sss" timestamps to seconds + ms
+    used to calculate start and end of acoustic features
+    """
+    time = timestamp.split(":")
+    if len(time) == 3:
+        return (float(time[0]) * 60 + float(time[1])) * 60 + float(time[2])
+    elif len(time) == 2:
+        return float(time[0]) * 60 + float(time[1])
 
 
 def transform_acoustic_item(item, acoustic_means, acoustic_stdev):

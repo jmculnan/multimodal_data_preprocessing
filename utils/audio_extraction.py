@@ -29,9 +29,7 @@ class TRSToCSV:
         self.tfile = f"{path}/{trsfile}.trs"
 
     def convert_trs(self, savepath):
-        trs_arr = [
-            ["speaker", "timestart", "timeend", "word", "utt_num", "word_num"]
-        ]
+        trs_arr = [["speaker", "timestart", "timeend", "word", "utt_num", "word_num"]]
         with open(self.tfile, "r") as trs:
             print(self.tfile)
             # for line in trs:
@@ -47,9 +45,7 @@ class TRSToCSV:
                     coach_participant[participant_num] = participant
                 if "<Turn " in line:
                     # print(line)
-                    timestart = re.search(
-                        r'startTime="(\d+.\d+)"', line
-                    ).group(1)
+                    timestart = re.search(r'startTime="(\d+.\d+)"', line).group(1)
                     timeend = re.search(r'endTime="(\d+.\d+)"', line).group(1)
                     speaker = re.search(r'spkr(\d)">', line).group(1)
                     word = re.search(r"/>(\S+)</Turn>", line).group(1)
@@ -81,9 +77,7 @@ class ExtractAudio:
     Takes audio and extracts features from it using openSMILE
     """
 
-    def __init__(
-            self, path, audiofile, savedir, smilepath="~/opensmile-2.3.0"
-    ):
+    def __init__(self, path, audiofile, savedir, smilepath="~/opensmile-2.3.0"):
         self.path = path
         self.afile = path + "/" + audiofile
         self.savedir = savedir
@@ -97,13 +91,13 @@ class ExtractAudio:
         Saves the CSV file
         """
         conf_dict = {
-            "ISO9": "IS09_emotion.conf",
-            "IS10": "IS10_paraling.conf",
-            "IS12": "IS12_speaker_trait.conf",
+            "ISO9": "is09-13/IS09_emotion.conf",
+            "IS10": "is09-13/IS10_paraling.conf",
+            "IS12": "is09-13/IS12_speaker_trait.conf",
             "IS13": "IS13_ComParE.conf",
         }
 
-        fconf = conf_dict.get(feature_set, "IS09_emotion.conf")
+        fconf = conf_dict.get(feature_set, "IS13_ComParE.conf")
 
         # check to see if save path exists; if not, make it
         os.makedirs(self.savedir, exist_ok=True)
@@ -161,7 +155,7 @@ class AudioSplit:
                         str(timeend),
                         f"{self.full_path}/{speaker}/{n}",
                         "-loglevel",
-                        "quiet"
+                        "quiet",
                     ]
                 )
                 # Consider using a tqdm progress bar here - Adarsh
@@ -236,9 +230,7 @@ class GetFeatures:
                     csv_data = self.drop_cols(csv_data, dropped_cols)
                 else:
                     csv_data = (
-                        csv_data.drop(["name", "frameTime"], axis=1)
-                            .to_numpy()
-                            .tolist()
+                        csv_data.drop(["name", "frameTime"], axis=1).to_numpy().tolist()
                     )
                 if "nan" in csv_data or "NaN" in csv_data or "inf" in csv_data:
                     pprint(csv_data)
@@ -255,16 +247,21 @@ def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard")
     """
     Run feature extraction from audio_extraction.py for meld
     """
+    # make sure the full save path exists; if not, create it
+    os.system(f'if [ ! -d "{save_dir}" ]; then mkdir -p {save_dir}; fi')
+
     # save all files in the directory
     for wfile in os.listdir(audio_path):
-        if dataset == "meld":
-            save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
-        else:
-            save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
+        # if dataset == "meld":
+        #     save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
+        #     meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+        #     meld_extractor.save_acoustic_csv(feature_set, save_name)
+        # else:
+        save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
+        audio_extractor = ExtractAudio(
+            audio_path, wfile, save_dir, "../../opensmile-2.3.0"
+        )
+        audio_extractor.save_acoustic_csv(feature_set, save_name)
 
 
 def transform_audio(txtfile):
@@ -297,29 +294,10 @@ def transform_audio(txtfile):
             audio_input.split_audio()
 
             for speaker in speakers:
-                audio_input.make_textfile(
-                    f"{path}/{extension}/{speaker}", speaker
-                )
+                audio_input.make_textfile(f"{path}/{extension}/{speaker}", speaker)
                 audio_input.join_audio(f"{extension}-{speaker}.txt", speaker)
 
             sp.run(["rm", "-r", f"{path}/{extension}"])
-
-
-def load_feature_csv(audio_csv):
-    """
-    Load audio features from an existing csv
-    audio_csv = the path to and name of the csv file
-    """
-    # todo: should we add ability to remove columns here, or somewhere else?
-    return pd.read_csv(audio_csv, sep=";")
-
-
-def drop_cols(self, dataframe, to_drop):
-    """
-    To drop columns from pandas dataframe
-    used in get_features_dict
-    """
-    return dataframe.drop(to_drop, axis=1).to_numpy().tolist()
 
 
 def expand_words(trscsv, file_to_save):
@@ -335,14 +313,9 @@ def expand_words(trscsv, file_to_save):
     with open(trscsv, "r") as tcsv:
         tcsv.readline()
         for line in tcsv:
-            (
-                speaker,
-                timestart,
-                timeend,
-                word,
-                utt_num,
-                wd_num,
-            ) = line.strip().split("\t")
+            (speaker, timestart, timeend, word, utt_num, wd_num,) = line.strip().split(
+                "\t"
+            )
             saver.append([timestart, speaker, word, utt_num, wd_num])
             newtime = float(timestart) + 0.01
             while newtime < float(timeend):
@@ -379,24 +352,27 @@ def convert_to_wav(nonwav_file):
     if nonwav_file.endswith(".m4a") or nonwav_file.endswith(".mp4"):
         # grab name without extension
         wav_name = f"{nonwav_file[:-4]}.wav"
-
-        if not os.path.exists(wav_name):
-            sp.run(["ffmpeg", "-i", nonwav_file, "-ac", "1", wav_name])
-        else:
-            print(f"{wav_name} already exists")
-
-        return wav_name
+    elif nonwav_file.endswith(".flac"):
+        # get name without extension
+        wav_name = f"{nonwav_file[:-5]}.wav"
     else:
         exit(f"{nonwav_file} is an unsupported file type")
 
+    if not os.path.exists(wav_name):
+        sp.run(["ffmpeg", "-i", nonwav_file, "-ac", "1", wav_name])
+    else:
+        print(f"{wav_name} already exists")
+
+    return wav_name
+
 
 def extract_portions_of_mp4_or_wav(
-        path_to_sound_file,
-        sound_file,
-        start_time,
-        end_time,
-        save_path=None,
-        short_file_name=None,
+    path_to_sound_file,
+    sound_file,
+    start_time,
+    end_time,
+    save_path=None,
+    short_file_name=None,
 ):
     """
     Extracts only necessary portions of a sound file
@@ -414,14 +390,15 @@ def extract_portions_of_mp4_or_wav(
 
     if not short_file_name:
         print("short file name not found")
-        short_file_name = (
-            f"{sound_file.split('.')[0]}_{start_time}_{end_time}.wav"
-        )
+        short_file_name = f"{sound_file.split('.')[0]}_{start_time}_{end_time}.wav"
 
     if save_path is not None:
         save_name = f"{save_path}/{short_file_name}"
     else:
         save_name = f"{path_to_sound_file}/{short_file_name}"
+
+    # make sure the full save path exists; if not, create it
+    os.system(f'if [ ! -d "{save_path}" ]; then mkdir -p {save_path}; fi')
 
     # get shortened version of file
     sp.run(
