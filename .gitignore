@@ -4,3 +4,6 @@
 # python
 *.pyc
 */__pycache__/
+
+# opensmile
+smile.log
