@@ -60,8 +60,17 @@ class MultitaskObject(object):
     """
     An object to hold the data and meta-information for each of the datasets/tasks
     """
-    def __init__(self, train_data, dev_data, test_data, class_loss_func, task_num, binary=False,
-                 optimizer=None):
+
+    def __init__(
+        self,
+        train_data,
+        dev_data,
+        test_data,
+        class_loss_func,
+        task_num,
+        binary=False,
+        optimizer=None,
+    ):
         """
         train_data, dev_data, and test_data are DatumListDataset datasets
         """
@@ -87,8 +96,10 @@ class MultitaskTestObject(object):
     """
     An object to hold the data and meta-information for each of the datasets/tasks
     """
-    def __init__(self, test_data, class_loss_func, task_num, binary=False,
-                 optimizer=None):
+
+    def __init__(
+        self, test_data, class_loss_func, task_num, binary=False, optimizer=None
+    ):
         """
         train_data, dev_data, and test_data are DatumListDataset datasets
         """
@@ -309,16 +320,20 @@ def get_avg_vec(nested_list):
 # apparently based off imbalanced logistic regression.  Let's see if they help!
 def get_class_weights(data_tensors_dict, data_type):
     if data_type == "meld":
-        y_tensor = data_tensors_dict['all_emotions']
+        y_tensor = data_tensors_dict["all_emotions"]
     elif data_type == "mustard":
-        y_tensor = data_tensors_dict['all_sarcasm']
+        y_tensor = data_tensors_dict["all_sarcasm"]
     elif data_type == "chalearn" or data_type == "firstimpr":
-        ys = [[data_tensors_dict["all_extraversion"][i],
-              data_tensors_dict["all_neuroticism"][i],
-              data_tensors_dict["all_agreeableness"][i],
-              data_tensors_dict["all_openness"][i],
-              data_tensors_dict["all_conscientiousness"][i]] for
-              i, item in enumerate(data_tensors_dict["all_extraversion"])]
+        ys = [
+            [
+                data_tensors_dict["all_extraversion"][i],
+                data_tensors_dict["all_neuroticism"][i],
+                data_tensors_dict["all_agreeableness"][i],
+                data_tensors_dict["all_openness"][i],
+                data_tensors_dict["all_conscientiousness"][i],
+            ]
+            for i, item in enumerate(data_tensors_dict["all_extraversion"])
+        ]
         y_tensor = [item.index(max(item)) for item in ys]
     else:
         print("data type does not have associated ys to get class weights")

@@ -15,14 +15,15 @@ from utils.data_prep_helpers import (
     get_gender_avgs,
     create_data_folds_list,
     Glove,
-    make_glove_dict
+    make_glove_dict,
 )
 
+
 def prep_ravdess_data(
-        data_path="../../datasets/multimodal_datasets/RAVDESS_Speech",
-        feature_set="IS13",
-        glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
-        features_to_use=None
+    data_path="../../datasets/multimodal_datasets/RAVDESS_Speech",
+    feature_set="IS13",
+    glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
+    features_to_use=None,
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -35,11 +36,13 @@ def prep_ravdess_data(
         train_prop=0.6,
         test_prop=0.2,
         f_end=f"{feature_set}.csv",
-        use_cols=features_to_use
+        use_cols=features_to_use,
     )
 
     # get train, dev, test
-    train_data = ravdess_prep.normalize_acoustic_data_in_tensors(ravdess_prep.train_data)
+    train_data = ravdess_prep.normalize_acoustic_data_in_tensors(
+        ravdess_prep.train_data
+    )
     dev_data = ravdess_prep.normalize_acoustic_data_in_tensors(ravdess_prep.dev_data)
     test_data = ravdess_prep.normalize_acoustic_data_in_tensors(ravdess_prep.test_data)
 
@@ -112,7 +115,9 @@ class RavdessPrep:
         """
         updated = tensor_to_update.copy().detach()
         for i, item in enumerate(updated):
-            updated[i][0] = transform_acoustic_item(updated[i][0], self.acoustic_means, self.acoustic_stdev)
+            updated[i][0] = transform_acoustic_item(
+                updated[i][0], self.acoustic_means, self.acoustic_stdev
+            )
 
         return updated
 

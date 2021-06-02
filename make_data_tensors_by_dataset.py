@@ -4,8 +4,7 @@ import torch
 from torch import nn
 
 
-def make_data_tensors_meld(text_data, used_utts_list, longest_utt,
-                           glove, tokenizer):
+def make_data_tensors_meld(text_data, used_utts_list, longest_utt, glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
@@ -17,9 +16,14 @@ def make_data_tensors_meld(text_data, used_utts_list, longest_utt,
         and utterance lengths
     """
     # create holders for the data
-    all_data = {"all_utts": [], "all_speakers": [], "all_emotions": [],
-                "all_sentiments": [], "utt_lengths": [],
-                "all_audio_ids": [], }
+    all_data = {
+        "all_utts": [],
+        "all_speakers": [],
+        "all_emotions": [],
+        "all_sentiments": [],
+        "utt_lengths": [],
+        "all_audio_ids": [],
+    }
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -32,7 +36,7 @@ def make_data_tensors_meld(text_data, used_utts_list, longest_utt,
             utts = [0] * longest_utt
 
             # get values from row
-            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            utt = tokenizer(clean_up_word(str(row["utterance"])))
             all_data["utt_lengths"].append(len(utt))
 
             spk_id = row["speaker"]
@@ -62,8 +66,7 @@ def make_data_tensors_meld(text_data, used_utts_list, longest_utt,
     return all_data
 
 
-def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
-                              glove, tokenizer):
+def make_data_tensors_mustard(text_data, used_utts_list, longest_utt, glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
@@ -75,10 +78,14 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
         and utterance lengths
     """
     # create holders for the data
-    all_data = {"all_utts": [], "all_speakers": [],
-                "all_genders": [],
-                "all_sarcasm": [], "utt_lengths": [],
-                "all_audio_ids": [], }
+    all_data = {
+        "all_utts": [],
+        "all_speakers": [],
+        "all_genders": [],
+        "all_sarcasm": [],
+        "utt_lengths": [],
+        "all_audio_ids": [],
+    }
 
     for idx, row in text_data.iterrows():
         # check if this is in the list
@@ -91,7 +98,7 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
             utts = [0] * longest_utt
 
             # get values from row
-            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            utt = tokenizer(clean_up_word(str(row["utterance"])))
             all_data["utt_lengths"].append(len(utt))
 
             spk_id = row["speaker"]
@@ -120,8 +127,9 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt,
     return all_data
 
 
-def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
-                               glove, tokenizer):
+def make_data_tensors_chalearn(
+    text_data, used_utts_list, longest_utt, glove, tokenizer
+):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
@@ -133,11 +141,19 @@ def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
         and utterance lengths
     """
     # create holders for the data
-    all_data = {"all_utts": [], "all_genders": [], "all_ethnicities": [],
-                "all_extraversion": [], "all_neuroticism": [],
-                "all_agreeableness": [], "all_openness": [],
-                "all_conscientiousness": [], "all_interview": [],
-                "all_audio_ids": [], "utt_lengths": []}
+    all_data = {
+        "all_utts": [],
+        "all_genders": [],
+        "all_ethnicities": [],
+        "all_extraversion": [],
+        "all_neuroticism": [],
+        "all_agreeableness": [],
+        "all_openness": [],
+        "all_conscientiousness": [],
+        "all_interview": [],
+        "all_audio_ids": [],
+        "utt_lengths": [],
+    }
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -151,7 +167,7 @@ def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
             utts = [0] * longest_utt
 
             # get values from row
-            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            utt = tokenizer(clean_up_word(str(row["utterance"])))
             all_data["utt_lengths"].append(len(utt))
 
             gend_id = row["gender"]
@@ -196,8 +212,7 @@ def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
     return all_data
 
 
-def make_data_tensors_cdc(text_data, used_utts_list, longest_utt,
-                          glove, tokenizer):
+def make_data_tensors_cdc(text_data, used_utts_list, longest_utt, glove, tokenizer):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
@@ -209,8 +224,13 @@ def make_data_tensors_cdc(text_data, used_utts_list, longest_utt,
         and utterance lengths
     """
     # create holders for the data
-    all_data = {"all_utts": [], "all_truth_values": [], "all_speakers": [],
-                "all_audio_ids": [], "utt_lengths": []}
+    all_data = {
+        "all_utts": [],
+        "all_truth_values": [],
+        "all_speakers": [],
+        "all_audio_ids": [],
+        "utt_lengths": [],
+    }
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -225,7 +245,7 @@ def make_data_tensors_cdc(text_data, used_utts_list, longest_utt,
             utts = [0] * longest_utt
 
             # get values from row
-            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            utt = tokenizer(clean_up_word(str(row["utterance"])))
             all_data["utt_lengths"].append(len(utt))
 
             spk_id = row["speaker"]

@@ -6,15 +6,19 @@ import pandas as pd
 
 from prep_data import SelfSplitPrep
 from utils.data_prep_helpers import split_string_time, make_glove_dict, Glove
-from utils.audio_extraction import extract_portions_of_mp4_or_wav, convert_to_wav, run_feature_extraction
+from utils.audio_extraction import (
+    extract_portions_of_mp4_or_wav,
+    convert_to_wav,
+    run_feature_extraction,
+)
 
 
 def prep_cdc_data(
-        data_path="../../datasets/multimodal_datasets/Columbia_deception_corpus",
-        feature_set="IS13",
-        transcription_type="gold",
-        glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
-        features_to_use=None
+    data_path="../../datasets/multimodal_datasets/Columbia_deception_corpus",
+    feature_set="IS13",
+    transcription_type="gold",
+    glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
+    features_to_use=None,
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -30,7 +34,7 @@ def prep_cdc_data(
         feature_set=feature_set,
         utterance_fname=utts_name,
         glove=glove,
-        use_cols=features_to_use
+        use_cols=features_to_use,
     )
 
     # get train, dev, test data
@@ -45,11 +49,7 @@ def prep_cdc_data(
     return train_data, dev_data, test_data, class_weights
 
 
-def preprocess_cdc(
-        corpus_path,
-        save_filename,
-        delete_existing_data_file=True
-):
+def preprocess_cdc(corpus_path, save_filename, delete_existing_data_file=True):
     """
     Preprocess the cdc files
     This requires extracting times from the .ltf files and .trs files,
@@ -78,12 +78,14 @@ def preprocess_cdc(
             ltf_file = f"{ltf_file}/S-{speaker}.ltf"
 
             # prep the data from these two files
-            num_items = prep_cdc_trs_data(f, ltf_file, f"{corpus_path}/{save_filename}",
-                                          speaker, num_items)
+            num_items = prep_cdc_trs_data(
+                f, ltf_file, f"{corpus_path}/{save_filename}", speaker, num_items
+            )
 
 
-def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
-                      speaker=None, utt_num=0):
+def prep_cdc_trs_data(
+    trs_file_path, ltf_file_path, save_filename_and_path, speaker=None, utt_num=0
+):
     """
     Convert CDC trs files to organized tsv
     :return: the new utterance number
@@ -93,11 +95,13 @@ def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
 
     # add header if the file doesn't exist
     if not os.path.exists(save_filename_and_path):
-        all_utts.append("speaker\tutt_num\tutterance\ttime_start\ttime_end\ttruth_value")
+        all_utts.append(
+            "speaker\tutt_num\tutterance\ttime_start\ttime_end\ttruth_value"
+        )
 
     # prepare the ltf (gold labeled) data
     ltf_data = []
-    with open(ltf_file_path, 'r') as ltf_file:
+    with open(ltf_file_path, "r") as ltf_file:
         # skip first two lines
         ltf_file.readlines(2)
         for line in ltf_file:
@@ -134,14 +138,20 @@ def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
                 # check if empty
                 if len(utt) > 2:
                     # get start time
-                    start_time = float(re.search(r'<Sync time="(\S+)"/>', line).group(1))
+                    start_time = float(
+                        re.search(r'<Sync time="(\S+)"/>', line).group(1)
+                    )
 
                     # get the utt number
                     utt_num += 1
 
                     try:
                         # get end time -- should usually be two lines after
-                        end_time = float(re.search(r'<Sync time="(\S+)"/>', used_lines[i + 2]).group(1))
+                        end_time = float(
+                            re.search(r'<Sync time="(\S+)"/>', used_lines[i + 2]).group(
+                                1
+                            )
+                        )
                     # if end time isn't where we expect it
                     except AttributeError:
                         end_found = False
@@ -149,7 +159,11 @@ def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
                         # search for end time
                         while not end_found:
                             if used_lines[i + 2 + j].startswith("<Sync time="):
-                                end_time = float(re.search(r'<Sync time="(\S+)"/>', used_lines[i + 2 + j]).group(1))
+                                end_time = float(
+                                    re.search(
+                                        r'<Sync time="(\S+)"/>', used_lines[i + 2 + j]
+                                    ).group(1)
+                                )
                                 end_found = True
                             else:
                                 j += 1
@@ -160,7 +174,10 @@ def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
                     # find overlap between gold label times and speech times
                     while find_truth:
                         # see if gold label time fully contains speech times
-                        if ltf_data[ltf_pointer][1] <= start_time and ltf_data[ltf_pointer][2] >= end_time:
+                        if (
+                            ltf_data[ltf_pointer][1] <= start_time
+                            and ltf_data[ltf_pointer][2] >= end_time
+                        ):
                             truth_value = ltf_data[ltf_pointer][0]
                             find_truth = False
                         # see if a new value is added during the speech -- this should be the gold
@@ -174,7 +191,9 @@ def prep_cdc_trs_data(trs_file_path, ltf_file_path, save_filename_and_path,
                         else:
                             ltf_pointer += 1
 
-                    all_utts.append(f"{speaker}\t{utt_num}\t{utt}\t{start_time}\t{end_time}\t{truth_value}")
+                    all_utts.append(
+                        f"{speaker}\t{utt_num}\t{utt}\t{start_time}\t{end_time}\t{truth_value}"
+                    )
 
     # save the data
     with open(save_filename_and_path, "a") as savefile:
@@ -202,7 +221,7 @@ def cdc_string_cleanup(string):
         "&lt;OTE&gt;",
         "&lt;MP&gt;",
         "&lt;LN&gt;",
-        "/"
+        "/",
     ]
     unusable = "|".join(unusable)
     string = string.strip()
@@ -222,8 +241,10 @@ def extract_audio_for_cdc(gold_label_df, base_path):
     """
     # convert all flac files to wav
     all_speakers = set(gold_label_df["speaker"].tolist())
-    [convert_to_wav(f"{base_path}/data/S-{speaker}/S-{speaker}_R_16k.flac")
-     for speaker in all_speakers]
+    [
+        convert_to_wav(f"{base_path}/data/S-{speaker}/S-{speaker}_R_16k.flac")
+        for speaker in all_speakers
+    ]
 
     # extract portions of wav
     for index, row in gold_label_df.iterrows():
@@ -237,25 +258,26 @@ def extract_audio_for_cdc(gold_label_df, base_path):
         save_path = f"{base_path}/wav"
         short_name = f"{speaker}_{utt_num}.wav"
 
-        extract_portions_of_mp4_or_wav(wav_path, wav_name, time_start, time_end,
-                                       save_path, short_name)
+        extract_portions_of_mp4_or_wav(
+            wav_path, wav_name, time_start, time_end, save_path, short_name
+        )
 
 
 # if __name__ == "__main__":
 #     pass
 
-    # corpus_path = "../../datasets/multimodal_datasets/Columbia_deception_corpus"
-    # save_filename = "cdc_gold.tsv"
-    # #
-    # preprocess_cdc(corpus_path, save_filename, delete_existing_data_file=True)
-    # gold_data_df = pd.read_csv(f"{corpus_path}/{save_filename}", sep="\t")
-    # extract_audio_for_cdc(gold_data_df, corpus_path)
-    #
-    # # run feature extraction
-    # run_feature_extraction(f"{corpus_path}/wav", "IS13", f"{corpus_path}/IS13")
-    #
-    # train, dev, test, weights = prep_cdc_data()
-    #
-    # print(train[0])
-    # print(len(train))
-    # print(weights)
+# corpus_path = "../../datasets/multimodal_datasets/Columbia_deception_corpus"
+# save_filename = "cdc_gold.tsv"
+# #
+# preprocess_cdc(corpus_path, save_filename, delete_existing_data_file=True)
+# gold_data_df = pd.read_csv(f"{corpus_path}/{save_filename}", sep="\t")
+# extract_audio_for_cdc(gold_data_df, corpus_path)
+#
+# # run feature extraction
+# run_feature_extraction(f"{corpus_path}/wav", "IS13", f"{corpus_path}/IS13")
+#
+# train, dev, test, weights = prep_cdc_data()
+#
+# print(train[0])
+# print(len(train))
+# print(weights)

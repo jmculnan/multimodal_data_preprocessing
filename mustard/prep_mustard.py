@@ -3,11 +3,11 @@ from utils.data_prep_helpers import Glove, make_glove_dict, get_speaker_to_index
 
 
 def prep_mustard_data(
-        data_path="../../datasets/multimodal_datasets/mustard",
-        feature_set="IS13",
-        transcription_type="gold",
-        glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
-        features_to_use=None
+    data_path="../../datasets/multimodal_datasets/mustard",
+    feature_set="IS13",
+    transcription_type="gold",
+    glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
+    features_to_use=None,
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -26,7 +26,7 @@ def prep_mustard_data(
         feature_set=feature_set,
         utterance_fname=utts_name,
         glove=glove,
-        use_cols=features_to_use
+        use_cols=features_to_use,
     )
 
     # get train, dev, test data

@@ -29,9 +29,7 @@ class TRSToCSV:
         self.tfile = f"{path}/{trsfile}.trs"
 
     def convert_trs(self, savepath):
-        trs_arr = [
-            ["speaker", "timestart", "timeend", "word", "utt_num", "word_num"]
-        ]
+        trs_arr = [["speaker", "timestart", "timeend", "word", "utt_num", "word_num"]]
         with open(self.tfile, "r") as trs:
             print(self.tfile)
             # for line in trs:
@@ -47,9 +45,7 @@ class TRSToCSV:
                     coach_participant[participant_num] = participant
                 if "<Turn " in line:
                     # print(line)
-                    timestart = re.search(
-                        r'startTime="(\d+.\d+)"', line
-                    ).group(1)
+                    timestart = re.search(r'startTime="(\d+.\d+)"', line).group(1)
                     timeend = re.search(r'endTime="(\d+.\d+)"', line).group(1)
                     speaker = re.search(r'spkr(\d)">', line).group(1)
                     word = re.search(r"/>(\S+)</Turn>", line).group(1)
@@ -81,9 +77,7 @@ class ExtractAudio:
     Takes audio and extracts features from it using openSMILE
     """
 
-    def __init__(
-            self, path, audiofile, savedir, smilepath="~/opensmile-2.3.0"
-    ):
+    def __init__(self, path, audiofile, savedir, smilepath="~/opensmile-2.3.0"):
         self.path = path
         self.afile = path + "/" + audiofile
         self.savedir = savedir
@@ -161,7 +155,7 @@ class AudioSplit:
                         str(timeend),
                         f"{self.full_path}/{speaker}/{n}",
                         "-loglevel",
-                        "quiet"
+                        "quiet",
                     ]
                 )
                 # Consider using a tqdm progress bar here - Adarsh
@@ -236,9 +230,7 @@ class GetFeatures:
                     csv_data = self.drop_cols(csv_data, dropped_cols)
                 else:
                     csv_data = (
-                        csv_data.drop(["name", "frameTime"], axis=1)
-                            .to_numpy()
-                            .tolist()
+                        csv_data.drop(["name", "frameTime"], axis=1).to_numpy().tolist()
                     )
                 if "nan" in csv_data or "NaN" in csv_data or "inf" in csv_data:
                     pprint(csv_data)
@@ -266,7 +258,9 @@ def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard")
         #     meld_extractor.save_acoustic_csv(feature_set, save_name)
         # else:
         save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
-        audio_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+        audio_extractor = ExtractAudio(
+            audio_path, wfile, save_dir, "../../opensmile-2.3.0"
+        )
         audio_extractor.save_acoustic_csv(feature_set, save_name)
 
 
@@ -300,9 +294,7 @@ def transform_audio(txtfile):
             audio_input.split_audio()
 
             for speaker in speakers:
-                audio_input.make_textfile(
-                    f"{path}/{extension}/{speaker}", speaker
-                )
+                audio_input.make_textfile(f"{path}/{extension}/{speaker}", speaker)
                 audio_input.join_audio(f"{extension}-{speaker}.txt", speaker)
 
             sp.run(["rm", "-r", f"{path}/{extension}"])
@@ -321,14 +313,9 @@ def expand_words(trscsv, file_to_save):
     with open(trscsv, "r") as tcsv:
         tcsv.readline()
         for line in tcsv:
-            (
-                speaker,
-                timestart,
-                timeend,
-                word,
-                utt_num,
-                wd_num,
-            ) = line.strip().split("\t")
+            (speaker, timestart, timeend, word, utt_num, wd_num,) = line.strip().split(
+                "\t"
+            )
             saver.append([timestart, speaker, word, utt_num, wd_num])
             newtime = float(timestart) + 0.01
             while newtime < float(timeend):
@@ -380,12 +367,12 @@ def convert_to_wav(nonwav_file):
 
 
 def extract_portions_of_mp4_or_wav(
-        path_to_sound_file,
-        sound_file,
-        start_time,
-        end_time,
-        save_path=None,
-        short_file_name=None,
+    path_to_sound_file,
+    sound_file,
+    start_time,
+    end_time,
+    save_path=None,
+    short_file_name=None,
 ):
     """
     Extracts only necessary portions of a sound file
@@ -403,9 +390,7 @@ def extract_portions_of_mp4_or_wav(
 
     if not short_file_name:
         print("short file name not found")
-        short_file_name = (
-            f"{sound_file.split('.')[0]}_{start_time}_{end_time}.wav"
-        )
+        short_file_name = f"{sound_file.split('.')[0]}_{start_time}_{end_time}.wav"
 
     if save_path is not None:
         save_name = f"{save_path}/{short_file_name}"
