@@ -75,6 +75,14 @@ class TRSToCSV:
             for item in trs_arr:
                 cfile.write("\t".join([str(x) for x in item]) + "\n")
 
+    def convert_trs_utt_level(self, savepath):
+        """
+        Convert trs to a csv if trs has utt-level alignment
+        :param savepath:
+        :return:
+        """
+
+
 
 class ExtractAudio:
     """

@@ -494,6 +494,18 @@ def scale_feature(value, min_val, max_val, lower=0.0, upper=1.0):
         return lower + (upper - lower) * (value - min_val) / (max_val - min_val)
 
 
+def split_string_time(timestamp):
+    """
+    split "hh:mm:ss.sss" timestamps to seconds + ms
+    used to calculate start and end of acoustic features
+    """
+    time = timestamp.split(":")
+    if len(time) == 3:
+        return (float(time[0]) * 60 + float(time[1])) * 60 + float(time[2])
+    elif len(time) == 2:
+        return float(time[0]) * 60 + float(time[1])
+
+
 def transform_acoustic_item(item, acoustic_means, acoustic_stdev):
     """
     Use gender averages and stdev to transform an acoustic item
