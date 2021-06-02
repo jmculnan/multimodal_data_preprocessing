@@ -109,3 +109,30 @@ def combine_xs_and_ys_chalearn(data_dict, acoustic_data, acoustic_lengths,
             )
 
     return data
+
+
+def combine_xs_and_ys_cdc(data_dict, acoustic_data, acoustic_lengths,
+                          acoustic_means, acoustic_stdev, speaker2idx):
+    """
+    Combine all x and y data into list of tuples for easier access with DataLoader
+    """
+    data = []
+
+    for i, item in enumerate(acoustic_data):
+        item_transformed = transform_acoustic_item(
+            item, acoustic_means, acoustic_stdev
+        )
+        data.append(
+            (
+                item_transformed,
+                data_dict["all_utts"][i],
+                speaker2idx[data_dict["all_speakers"][i]],
+                0,  # todo: add gender later?
+                data_dict["all_truth_values"][i],
+                data_dict["all_audio_ids"][i],
+                data_dict["utt_lengths"][i],
+                acoustic_lengths[i],
+            )
+        )
+
+    return data

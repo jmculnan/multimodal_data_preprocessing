@@ -14,7 +14,8 @@ from sklearn.utils import compute_class_weight
 from torch import nn
 from torchtext.data import get_tokenizer
 
-from combine_xs_and_ys_by_dataset import combine_xs_and_ys_chalearn, combine_xs_and_ys_meld, combine_xs_and_ys_mustard
+from combine_xs_and_ys_by_dataset import combine_xs_and_ys_chalearn, combine_xs_and_ys_meld, combine_xs_and_ys_mustard, \
+    combine_xs_and_ys_cdc
 from utils.audio_extraction import (ExtractAudio,
                                     convert_to_wav,
                                     run_feature_extraction
@@ -141,7 +142,7 @@ class SelfSplitPrep:
         self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
 
         # get dict of all speakers to use
-        if data_type == "mustard":
+        if data_type == "mustard" or data_type == "cdc":
             all_speakers = set(self.all_data["speaker"])
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
@@ -214,6 +215,8 @@ class DataPrep:
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
 
+        print(self.used_ids)
+
         # get acoustic set for train, dev, test partitions
         self.acoustic_tensor, self.acoustic_lengths = self.make_acoustic_set(self.acoustic_dict,
                                                                              self.acoustic_lengths_dict,
@@ -270,10 +273,10 @@ class DataPrep:
             combined = combine_xs_and_ys_chalearn(self.data_tensors, self.acoustic_tensor,
                                    self.acoustic_lengths, self.acoustic_means,
                                    self.acoustic_stdev, pred_type=self.pred_type)
-        elif self.d_type == "ravdess":
-            pass
         elif self.d_type == "cdc":
-            pass
+            combined = combine_xs_and_ys_cdc(self.data_tensors, self.acoustic_tensor,
+                                   self.acoustic_lengths, self.acoustic_means,
+                                   self.acoustic_stdev, speaker2idx)
 
         return combined
 
@@ -294,7 +297,8 @@ class DataPrep:
         elif self.d_type == "ravdess":
             pass
         elif self.d_type == "cdc":
-            pass
+            valid_ids = text_data["utt_num"].tolist()
+            valid_ids = [str(item) for item in valid_ids]
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -366,12 +370,8 @@ class DataPrep:
             data_tensor_dict = make_data_tensors_mustard(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             data_tensor_dict = make_data_tensors_chalearn(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
-        elif self.d_type == "ravdess":
-            pass
-            #data_tensor_dict = make_data_tensors_ravdess(text_data, longest_utt, glove)
         elif self.d_type == "cdc":
-            pass
-            #data_tensor_dict = make_data_tensors_cdc(text_data, longest_utt, glove)
+            data_tensor_dict = make_data_tensors_cdc(text_data, self.used_ids, longest_utt, glove, self.tokenizer)
 
         return data_tensor_dict
 
@@ -441,6 +441,8 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
         if dataset == "meld":
             dia_id, utt_id = feats_file_name.split("_")[:2]
             id = (dia_id, utt_id)
+        elif dataset == "cdc":
+            id = feats_file_name.split(f"_")[1]
         else:
             id = feats_file_name.split(f"_{feature_set}.csv")[0]
 

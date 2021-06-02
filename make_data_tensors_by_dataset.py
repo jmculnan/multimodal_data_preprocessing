@@ -194,3 +194,62 @@ def make_data_tensors_chalearn(text_data, used_utts_list, longest_utt,
 
     # return data
     return all_data
+
+
+def make_data_tensors_cdc(text_data, used_utts_list, longest_utt,
+                          glove, tokenizer):
+    """
+    Make the data tensors for meld
+    :param text_data: a pandas df containing text and gold
+    :param used_utts_list: the list of all utts with acoustic data
+    :param longest_utt: length of longest utt
+    :param glove: an instance of class Glove
+    :param tokenizer: a tokenizer
+    :return: a dict containing tensors for utts, speakers, ys,
+        and utterance lengths
+    """
+    # create holders for the data
+    all_data = {"all_utts": [], "all_truth_values": [], "all_speakers": [],
+                "all_audio_ids": [], "utt_lengths": []}
+
+    for idx, row in text_data.iterrows():
+        # check if this item has acoustic data
+        audio_name = str(row["utt_num"])
+
+        if audio_name in used_utts_list:
+
+            # get audio id
+            all_data["all_audio_ids"].append(row["utt_num"])
+
+            # create utterance-level holders
+            utts = [0] * longest_utt
+
+            # get values from row
+            utt = tokenizer(clean_up_word(str(row['utterance'])))
+            all_data["utt_lengths"].append(len(utt))
+
+            spk_id = row["speaker"]
+            truth_val = row["truth_value"]
+            if truth_val == "TRUTH":
+                truth_val = 1
+            else:
+                truth_val = 0
+
+            # convert words to indices for glove
+            utt_indexed = glove.index(utt)
+            for i, item in enumerate(utt_indexed):
+                utts[i] = item
+
+            all_data["all_utts"].append(torch.tensor(utts))
+            all_data["all_speakers"].append(spk_id)
+            all_data["all_truth_values"].append(truth_val)
+
+    # create pytorch tensors for each
+    all_data["all_truth_values"] = torch.tensor(all_data["all_truth_values"])
+
+    # pad and transpose utterance sequences
+    all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])
+    all_data["all_utts"] = all_data["all_utts"].transpose(0, 1)
+
+    # return data
+    return all_data

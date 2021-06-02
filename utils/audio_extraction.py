@@ -75,14 +75,6 @@ class TRSToCSV:
             for item in trs_arr:
                 cfile.write("\t".join([str(x) for x in item]) + "\n")
 
-    def convert_trs_utt_level(self, savepath):
-        """
-        Convert trs to a csv if trs has utt-level alignment
-        :param savepath:
-        :return:
-        """
-
-
 
 class ExtractAudio:
     """
@@ -105,13 +97,13 @@ class ExtractAudio:
         Saves the CSV file
         """
         conf_dict = {
-            "ISO9": "IS09_emotion.conf",
-            "IS10": "IS10_paraling.conf",
-            "IS12": "IS12_speaker_trait.conf",
+            "ISO9": "is09-13/IS09_emotion.conf",
+            "IS10": "is09-13/IS10_paraling.conf",
+            "IS12": "is09-13/IS12_speaker_trait.conf",
             "IS13": "IS13_ComParE.conf",
         }
 
-        fconf = conf_dict.get(feature_set, "IS09_emotion.conf")
+        fconf = conf_dict.get(feature_set, "IS13_ComParE.conf")
 
         # check to see if save path exists; if not, make it
         os.makedirs(self.savedir, exist_ok=True)
@@ -263,16 +255,19 @@ def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard")
     """
     Run feature extraction from audio_extraction.py for meld
     """
+    # make sure the full save path exists; if not, create it
+    os.system(f'if [ ! -d "{save_dir}" ]; then mkdir -p {save_dir}; fi')
+
     # save all files in the directory
     for wfile in os.listdir(audio_path):
-        if dataset == "meld":
-            save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
-        else:
-            save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
-            meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-            meld_extractor.save_acoustic_csv(feature_set, save_name)
+        # if dataset == "meld":
+        #     save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
+        #     meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+        #     meld_extractor.save_acoustic_csv(feature_set, save_name)
+        # else:
+        save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
+        audio_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
+        audio_extractor.save_acoustic_csv(feature_set, save_name)
 
 
 def transform_audio(txtfile):
@@ -311,23 +306,6 @@ def transform_audio(txtfile):
                 audio_input.join_audio(f"{extension}-{speaker}.txt", speaker)
 
             sp.run(["rm", "-r", f"{path}/{extension}"])
-
-
-def load_feature_csv(audio_csv):
-    """
-    Load audio features from an existing csv
-    audio_csv = the path to and name of the csv file
-    """
-    # todo: should we add ability to remove columns here, or somewhere else?
-    return pd.read_csv(audio_csv, sep=";")
-
-
-def drop_cols(dataframe, to_drop):
-    """
-    To drop columns from pandas dataframe
-    used in get_features_dict
-    """
-    return dataframe.drop(to_drop, axis=1).to_numpy().tolist()
 
 
 def expand_words(trscsv, file_to_save):
@@ -387,15 +365,18 @@ def convert_to_wav(nonwav_file):
     if nonwav_file.endswith(".m4a") or nonwav_file.endswith(".mp4"):
         # grab name without extension
         wav_name = f"{nonwav_file[:-4]}.wav"
-
-        if not os.path.exists(wav_name):
-            sp.run(["ffmpeg", "-i", nonwav_file, "-ac", "1", wav_name])
-        else:
-            print(f"{wav_name} already exists")
-
-        return wav_name
+    elif nonwav_file.endswith(".flac"):
+        # get name without extension
+        wav_name = f"{nonwav_file[:-5]}.wav"
     else:
         exit(f"{nonwav_file} is an unsupported file type")
+
+    if not os.path.exists(wav_name):
+        sp.run(["ffmpeg", "-i", nonwav_file, "-ac", "1", wav_name])
+    else:
+        print(f"{wav_name} already exists")
+
+    return wav_name
 
 
 def extract_portions_of_mp4_or_wav(
@@ -430,6 +411,9 @@ def extract_portions_of_mp4_or_wav(
         save_name = f"{save_path}/{short_file_name}"
     else:
         save_name = f"{path_to_sound_file}/{short_file_name}"
+
+    # make sure the full save path exists; if not, create it
+    os.system(f'if [ ! -d "{save_path}" ]; then mkdir -p {save_path}; fi')
 
     # get shortened version of file
     sp.run(
