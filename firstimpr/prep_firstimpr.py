@@ -33,6 +33,8 @@ def prep_firstimpr_data(
 
     # add the prediction type, since first impressions can have several
     firstimpr_prep.train_prep.add_pred_type(pred_type)
+    firstimpr_prep.dev_prep.add_pred_type(pred_type)
+    firstimpr_prep.test_prep.add_pred_type(pred_type)
 
     # get train, dev, test data
     print("Now preparing training data")

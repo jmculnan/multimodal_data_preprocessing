@@ -19,7 +19,7 @@ from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_meld,
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
-)
+    combine_xs_and_ys_mosi)
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
 from make_data_tensors_by_dataset import *
 
@@ -154,6 +154,7 @@ class SelfSplitPrep:
         use_cols=None,
         train_prop=0.6,
         test_prop=0.2,
+        pred_type=None
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -174,7 +175,8 @@ class SelfSplitPrep:
         self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
 
         # get dict of all speakers to use
-        if data_type == "mustard" or data_type == "cdc":
+        if data_type == "mustard" or data_type == "cdc" or data_type == "mosi" or \
+            data_type == "cmu_mosi" or data_type == "cmu-mosi":
             all_speakers = set(self.all_data["speaker"])
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
@@ -202,6 +204,10 @@ class SelfSplitPrep:
             glove,
             "train",
         )
+
+        # add pred type if needed (currently just mosi)
+        if pred_type is not None:
+            self.train_prep.add_pred_type(pred_type)
 
         self.data = self.train_prep.combine_xs_and_ys(speaker2idx)
 
@@ -255,8 +261,6 @@ class DataPrep:
 
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
-
-        print(self.used_ids)
 
         # get acoustic set for train, dev, test partitions
         self.acoustic_tensor, self.acoustic_lengths = self.make_acoustic_set(
@@ -341,6 +345,17 @@ class DataPrep:
                 self.acoustic_stdev,
                 speaker2idx,
             )
+        elif self.d_type == "mosi" or self.d_type == "cmu_mosi" or \
+            self.d_type == "cmu-mosi":
+            combined = combine_xs_and_ys_mosi(
+                self.data_tensors,
+                self.acoustic_tensor,
+                self.acoustic_lengths,
+                self.acoustic_means,
+                self.acoustic_stdev,
+                speaker2idx,
+                pred_type=self.pred_type
+            )
 
         return combined
 
@@ -358,11 +373,12 @@ class DataPrep:
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             valid_ids = text_data["file"].tolist()
             valid_ids = [item.split(".mp4")[0] for item in valid_ids]
-        elif self.d_type == "ravdess":
-            pass
         elif self.d_type == "cdc":
             valid_ids = text_data["utt_num"].tolist()
             valid_ids = [str(item) for item in valid_ids]
+        elif self.d_type == "mosi" or self.d_type == "cmu-mosi" or \
+            self.d_type == "cmu_mosi":
+            valid_ids = text_data["id"].tolist()
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -445,6 +461,10 @@ class DataPrep:
             )
         elif self.d_type == "cdc":
             data_tensor_dict = make_data_tensors_cdc(
+                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+            )
+        elif self.d_type == "mosi" or self.d_type == "cmu_mosi" or self.d_type == "cmu-mosi":
+            data_tensor_dict = make_data_tensors_mosi(
                 text_data, self.used_ids, longest_utt, glove, self.tokenizer
             )
 
