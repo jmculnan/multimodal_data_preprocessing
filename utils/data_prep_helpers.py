@@ -336,7 +336,10 @@ def get_class_weights(data_tensors_dict, data_type):
         ]
         y_tensor = [item.index(max(item)) for item in ys]
     else:
-        print("data type does not have associated ys to get class weights")
+        print(
+            "data type does not have associated ys to get class weights; "
+            "if this dataset is not prepartitioned, weights will be assigned later."
+        )
         return None
 
     labels = [int(y) for y in y_tensor]
