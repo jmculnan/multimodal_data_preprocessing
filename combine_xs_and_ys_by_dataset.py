@@ -169,7 +169,9 @@ def combine_xs_and_ys_mosi(
     # to keep the numbers as they are
     if pred_type == "regression":
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed,
@@ -185,7 +187,9 @@ def combine_xs_and_ys_mosi(
     # to do a 7-class classification
     elif pred_type == "classification":
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed,
@@ -207,7 +211,9 @@ def combine_xs_and_ys_mosi(
                 sentiment_val = 0
             else:
                 sentiment_val = 2
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed,
