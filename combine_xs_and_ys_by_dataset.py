@@ -196,7 +196,7 @@ def combine_xs_and_ys_mosi(
                     data_dict["all_utts"][i],
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
-                    data_dict["all_sentiments"][i].round(),
+                    torch.tensor(round(data_dict["all_sentiments"][i].item())),
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
