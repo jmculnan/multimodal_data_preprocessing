@@ -2,10 +2,11 @@
 # this should allow for faster usage later
 
 import os
+import pickle
 
 import pandas as pd
 import numpy as np
-from utils.data_prep_helpers import clean_up_word
+from utils.data_prep_helpers import clean_up_word, make_glove_dict, Glove
 
 from torchtext.data import get_tokenizer
 
@@ -115,3 +116,13 @@ def append_subset(subset, save_path):
         for item in subset:
             gfile.write(" ".join(item))
             gfile.write("\n")
+
+
+def pickle_glove(glove_object, save_path):
+    """
+    Save a pickle of the glove object
+    :param glove_object: instance of class Glove
+    :param save_path: path to save object
+    :return:
+    """
+    pickle.dump(glove_object, open(f"{save_path}", "wb"))
