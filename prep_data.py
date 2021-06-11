@@ -69,7 +69,7 @@ class StandardPrep:
         self.paths = {"train": train_path, "dev": dev_path, "test": test_path}
 
         # read in each partition
-        if data_type == "meld" and transcription_type == "gold":
+        if data_type == "meld" and transcription_type.lower() == "gold":
             sep = ","
         else:
             sep = "\t"
@@ -253,6 +253,7 @@ class DataPrep:
         longest_acoustic,
         glove,
         partition,
+        add_avging=True
     ):
         # set data type
         self.d_type = data_type
@@ -273,7 +274,7 @@ class DataPrep:
             self.acoustic_dict,
             self.acoustic_lengths_dict,
             longest_acoustic,
-            add_avging=False,
+            add_avging=add_avging,
         )
         # use acoustic sets to get data tensors
         self.data_tensors = self.make_data_tensors(data, longest_utt, glove)
@@ -446,6 +447,8 @@ class DataPrep:
         # this is here to keep the formatting for acoustic RNN
         all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
         all_acoustic = all_acoustic.transpose(0, 1)
+        all_acoustic = all_acoustic.float()
+        # all_acoustic = all_acoustic.type(torch.FloatTensor)
 
         print(f"Acoustic set made at {datetime.datetime.now()}")
 

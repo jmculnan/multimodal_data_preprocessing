@@ -15,12 +15,12 @@ def combine_xs_and_ys_meld(
         item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
         data.append(
             (
-                item_transformed,
-                data_dict["all_utts"][i],
-                data_dict["all_speakers"][i],
+                item_transformed.clone().detach(),
+                data_dict["all_utts"][i].clone().detach(),
+                data_dict["all_speakers"][i].clone().detach(),
                 0,  # fixme: genders temporarily removed
-                data_dict["all_emotions"][i],
-                data_dict["all_sentiments"][i],
+                data_dict["all_emotions"][i].clone().detach(),
+                data_dict["all_sentiments"][i].clone().detach(),
                 data_dict["all_audio_ids"][i],
                 data_dict["utt_lengths"][i],
                 acoustic_lengths[i],
@@ -47,11 +47,11 @@ def combine_xs_and_ys_mustard(
         item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
         data.append(
             (
-                item_transformed,
-                data_dict["all_utts"][i],
+                item_transformed.clone().detach(),
+                data_dict["all_utts"][i].clone().detach(),
                 speaker2idx[data_dict["all_speakers"][i]],
                 0,  # fixme: genders temporarily removed
-                data_dict["all_sarcasm"][i],
+                data_dict["all_sarcasm"][i].clone().detach(),
                 data_dict["all_audio_ids"][i],
                 data_dict["utt_lengths"][i],
                 acoustic_lengths[i],
@@ -79,17 +79,17 @@ def combine_xs_and_ys_chalearn(
         if pred_type is not "max_class":
             data.append(
                 (
-                    item_transformed,
-                    data_dict["all_utts"][i],
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
                     0,  # todo: eventually add speaker ?
-                    data_dict["all_genders"][i],
-                    data_dict["all_ethnicities"][i],
-                    data_dict["all_extraversion"][i],
-                    data_dict["all_neuroticism"][i],
-                    data_dict["all_agreeableness"][i],
-                    data_dict["all_openness"][i],
-                    data_dict["all_conscientiousness"][i],
-                    data_dict["all_interview"][i],
+                    data_dict["all_genders"][i].clone().detach(),
+                    data_dict["all_ethnicities"][i].clone().detach(),
+                    data_dict["all_extraversion"][i].clone().detach(),
+                    data_dict["all_neuroticism"][i].clone().detach(),
+                    data_dict["all_agreeableness"][i].clone().detach(),
+                    data_dict["all_openness"][i].clone().detach(),
+                    data_dict["all_conscientiousness"][i].clone().detach(),
+                    data_dict["all_interview"][i].clone().detach(),
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -106,12 +106,12 @@ def combine_xs_and_ys_chalearn(
             item_y = ys.index(max(ys))
             data.append(
                 (
-                    item_transformed,
-                    data_dict["all_utts"][i],
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
                     0,  # todo: eventually add speaker ?
-                    data_dict["all_genders"][i],
+                    data_dict["all_genders"][i].clone().detach(),
                     torch.tensor(item_y),
-                    data_dict["all_ethnicities"][i],
+                    data_dict["all_ethnicities"][i].clone().detach(),
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -138,11 +138,11 @@ def combine_xs_and_ys_cdc(
         item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
         data.append(
             (
-                item_transformed,
-                data_dict["all_utts"][i],
+                item_transformed.clone().detach(),
+                data_dict["all_utts"][i].clone().detach(),
                 speaker2idx[data_dict["all_speakers"][i]],
                 0,  # todo: add gender later?
-                data_dict["all_truth_values"][i],
+                data_dict["all_truth_values"][i].clone().detach(),
                 data_dict["all_audio_ids"][i],
                 data_dict["utt_lengths"][i],
                 acoustic_lengths[i],
@@ -174,11 +174,11 @@ def combine_xs_and_ys_mosi(
             )
             data.append(
                 (
-                    item_transformed,
-                    data_dict["all_utts"][i],
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
-                    data_dict["all_sentiments"][i],
+                    data_dict["all_sentiments"][i].clone().detach(),
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -192,8 +192,8 @@ def combine_xs_and_ys_mosi(
             )
             data.append(
                 (
-                    item_transformed,
-                    data_dict["all_utts"][i],
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
                     torch.tensor(round(data_dict["all_sentiments"][i].item())),
@@ -216,8 +216,8 @@ def combine_xs_and_ys_mosi(
             )
             data.append(
                 (
-                    item_transformed,
-                    data_dict["all_utts"][i],
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
                     torch.tensor(sentiment_val),
