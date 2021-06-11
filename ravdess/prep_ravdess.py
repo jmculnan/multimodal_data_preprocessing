@@ -86,41 +86,12 @@ class RavdessPrep:
         )
 
         # pull out ys from train to get class weights
-        self.train_y_emotion = torch.tensor([item[4] for item in self.train_data])
-        self.train_y_intensity = torch.tensor([item[5] for item in self.train_data])
+        self.train_y_intensity = torch.tensor([item[4] for item in self.train_data])
+        self.train_y_emotion = torch.tensor([item[5] for item in self.train_data])
 
         # set the sarcasm weights
         self.emotion_weights = get_class_weights(self.train_y_emotion, data_type="ravdess")
         self.intensity_weights = get_class_weights(self.train_y_intensity, data_type="ravdess")
-
-        # pull out acoustic data and gender data from train for normalization
-        self.train_acoustic = torch.tensor(
-            [item[0].tolist() for item in self.train_data]
-        )
-        self.train_genders = [item[3] for item in self.train_data]
-
-        # acoustic feature normalization based on train
-        self.acoustic_means = self.train_acoustic.mean(dim=0, keepdim=False)
-        self.acoustic_stdev = self.train_acoustic.std(dim=0, keepdim=False)
-        # self.male_acoustic_means, self.male_deviations = get_gender_avgs(
-        #     self.train_acoustic, self.train_genders, gender=2
-        # )
-        # self.female_acoustic_means, self.female_deviations = get_gender_avgs(
-        #     self.train_acoustic, self.train_genders, gender=1
-        # )
-
-    def normalize_acoustic_data_in_tensors(self, tensor_to_update):
-        """
-        Updated data tensors to be normalized by means
-        :return:
-        """
-        updated = tensor_to_update.copy().detach()
-        for i, item in enumerate(updated):
-            updated[i][0] = transform_acoustic_item(
-                updated[i][0], self.acoustic_means, self.acoustic_stdev
-            )
-
-        return updated
 
 
 def make_ravdess_data_tensors(
@@ -234,8 +205,8 @@ def make_ravdess_data_tensors(
                 utterances[i],
                 speakers[i],
                 genders[i],
-                emotions[i],
                 intensities[i],
+                emotions[i],
                 repetitions[i],
                 6,
                 acoustic_lengths[i],
