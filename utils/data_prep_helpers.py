@@ -20,6 +20,7 @@ class DatumListDataset(Dataset):
     """
     A dataset to hold a list of datums
     """
+
     def __init__(self, data_list, data_type="meld_emotion", class_weights=None):
         self.data_list = data_list
         self.data_type = data_type

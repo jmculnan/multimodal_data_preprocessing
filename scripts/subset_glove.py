@@ -14,27 +14,27 @@ parser.add_argument(
     "--glove_path",
     help="Path to full GloVe file",
     default="../../glove.42B.300d.txt",
-    nargs="?"
+    nargs="?",
 )
 
 parser.add_argument(
     "--save_path_and_name",
     help="Path and name of file to save",
     default="../../glove.subset.300d.txt",
-    nargs="?"
+    nargs="?",
 )
 
 parser.add_argument(
     "--vector_length",
     help="The length of glove vectors in file of interest",
     default=300,
-    nargs="?"
+    nargs="?",
 )
 
 parser.add_argument(
     "--utterance_files",
     help="The files containing a column 'utterance' with each utterance",
-    nargs="+"
+    nargs="+",
 )
 
 args = parser.parse_args()
@@ -81,7 +81,9 @@ if __name__ == "__main__":
                 vocab.add(wd)
 
     # subset glove
-    subset = glove.subset_glove(args.glove_path, vocab, args.vector_length, add_unk=True)
+    subset = glove.subset_glove(
+        args.glove_path, vocab, args.vector_length, add_unk=True
+    )
 
     # save the subset
     glove.save_subset(subset, args.save_path_and_name)

@@ -90,8 +90,12 @@ class RavdessPrep:
         self.train_y_emotion = torch.tensor([item[5] for item in self.train_data])
 
         # set the sarcasm weights
-        self.emotion_weights = get_class_weights(self.train_y_emotion, data_type="ravdess")
-        self.intensity_weights = get_class_weights(self.train_y_intensity, data_type="ravdess")
+        self.emotion_weights = get_class_weights(
+            self.train_y_emotion, data_type="ravdess"
+        )
+        self.intensity_weights = get_class_weights(
+            self.train_y_intensity, data_type="ravdess"
+        )
 
 
 def make_ravdess_data_tensors(
@@ -197,8 +201,9 @@ def make_ravdess_data_tensors(
     acoustic_means, acoustic_stdev = get_acoustic_means(acoustic_holder)
 
     for i in range(len(acoustic_holder)):
-        acoustic_data = transform_acoustic_item(acoustic_holder[i], acoustic_means,
-                                                acoustic_stdev)
+        acoustic_data = transform_acoustic_item(
+            acoustic_holder[i], acoustic_means, acoustic_stdev
+        )
         data.append(
             (
                 acoustic_data,

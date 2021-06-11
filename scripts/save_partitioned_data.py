@@ -12,9 +12,17 @@ import os
 from torch.utils.data import Dataset
 
 
-def save_partitioned_data(dataset, save_path, data_path, feature_set,
-                          transcription_type, glove_path, feats_to_use=None,
-                          pred_type=None, zip=False):
+def save_partitioned_data(
+    dataset,
+    save_path,
+    data_path,
+    feature_set,
+    transcription_type,
+    glove_path,
+    feats_to_use=None,
+    pred_type=None,
+    zip=False,
+):
     """
     Save partitioned data in pickled format
     :param dataset: the string name of dataset to use
@@ -33,24 +41,56 @@ def save_partitioned_data(dataset, save_path, data_path, feature_set,
     # make sure the full save path exists; if not, create it
     os.system(f'if [ ! -d "{save_path}" ]; then mkdir -p {save_path}; fi')
 
-    train_ds, dev_ds, test_ds, clss_weights = prep_data(dataset, data_path, feature_set, transcription_type,
-                                                        glove_path, feats_to_use, pred_type)
+    train_ds, dev_ds, test_ds, clss_weights = prep_data(
+        dataset,
+        data_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        feats_to_use,
+        pred_type,
+    )
 
     if zip:
-        pickle.dump(train_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_train.bz2", "wb"))
-        pickle.dump(dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_dev.bz2", "wb"))
-        pickle.dump(test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_test.bz2", "wb"))
-        pickle.dump(clss_weights, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_clsswts.bz2", "wb"))
+        pickle.dump(
+            train_ds,
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_train.bz2", "wb"),
+        )
+        pickle.dump(
+            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_dev.bz2", "wb")
+        )
+        pickle.dump(
+            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_test.bz2", "wb")
+        )
+        pickle.dump(
+            clss_weights,
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_clsswts.bz2", "wb"),
+        )
     else:
-        pickle.dump(train_ds, open(f"{save_path}/{dataset}_{feature_set}_train.pickle", "wb"))
-        pickle.dump(dev_ds, open(f"{save_path}/{dataset}_{feature_set}_dev.pickle", "wb"))
-        pickle.dump(test_ds, open(f"{save_path}/{dataset}_{feature_set}_test.pickle", "wb"))
-        pickle.dump(clss_weights, open(f"{save_path}/{dataset}_{feature_set}_clsswts.pickle", "wb"))
+        pickle.dump(
+            train_ds, open(f"{save_path}/{dataset}_{feature_set}_train.pickle", "wb")
+        )
+        pickle.dump(
+            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_dev.pickle", "wb")
+        )
+        pickle.dump(
+            test_ds, open(f"{save_path}/{dataset}_{feature_set}_test.pickle", "wb")
+        )
+        pickle.dump(
+            clss_weights,
+            open(f"{save_path}/{dataset}_{feature_set}_clsswts.pickle", "wb"),
+        )
 
 
-def prep_data(dataset, data_path, feature_set,
-              transcription_type, glove_path, feats_to_use,
-              pred_type=None):
+def prep_data(
+    dataset,
+    data_path,
+    feature_set,
+    transcription_type,
+    glove_path,
+    feats_to_use,
+    pred_type=None,
+):
     """
     Prepare data for a given dataset
     :param dataset: string name of dataset
@@ -59,22 +99,39 @@ def prep_data(dataset, data_path, feature_set,
     dataset = dataset.lower()
 
     if dataset == "cdc":
-        train, dev, test, weights = prep_cdc_data(data_path, feature_set, transcription_type,
-                                                  glove_path, feats_to_use)
+        train, dev, test, weights = prep_cdc_data(
+            data_path, feature_set, transcription_type, glove_path, feats_to_use
+        )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
-        train, dev, test, weights = prep_mosi_data(data_path, feature_set, transcription_type,
-                                                   glove_path, feats_to_use, pred_type)
+        train, dev, test, weights = prep_mosi_data(
+            data_path,
+            feature_set,
+            transcription_type,
+            glove_path,
+            feats_to_use,
+            pred_type,
+        )
     elif dataset == "firstimpr" or dataset == "chalearn":
-        train, dev, test, weights = prep_firstimpr_data(data_path, feature_set, transcription_type,
-                                                        glove_path, feats_to_use, pred_type)
+        train, dev, test, weights = prep_firstimpr_data(
+            data_path,
+            feature_set,
+            transcription_type,
+            glove_path,
+            feats_to_use,
+            pred_type,
+        )
     elif dataset == "meld":
-        train, dev, test, weights = prep_meld_data(data_path, feature_set, transcription_type,
-                                                   glove_path, feats_to_use)
+        train, dev, test, weights = prep_meld_data(
+            data_path, feature_set, transcription_type, glove_path, feats_to_use
+        )
     elif dataset == "mustard":
-        train, dev, test, weights = prep_mustard_data(data_path, feature_set, transcription_type,
-                                                      glove_path, feats_to_use)
+        train, dev, test, weights = prep_mustard_data(
+            data_path, feature_set, transcription_type, glove_path, feats_to_use
+        )
     elif dataset == "ravdess":
-        train, dev, test, weights = prep_ravdess_data(data_path, feature_set, glove_path, feats_to_use)
+        train, dev, test, weights = prep_ravdess_data(
+            data_path, feature_set, glove_path, feats_to_use
+        )
 
     return train, dev, test, weights
 
@@ -132,20 +189,38 @@ if __name__ == "__main__":
 
     transcription_type = "gold"
 
-    save_partitioned_data("cdc", save_path, cdc_path, feature_set, transcription_type,
-                          glove_path)
+    save_partitioned_data(
+        "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path
+    )
 
-    save_partitioned_data("mosi", save_path, mosi_path, feature_set, transcription_type,
-                          glove_path, pred_type="classification")
+    save_partitioned_data(
+        "mosi",
+        save_path,
+        mosi_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        pred_type="classification",
+    )
 
-    save_partitioned_data("firstimpr", save_path, firstimpr_path, feature_set, transcription_type,
-                          glove_path, pred_type="max_class")
+    save_partitioned_data(
+        "firstimpr",
+        save_path,
+        firstimpr_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        pred_type="max_class",
+    )
 
-    save_partitioned_data("meld", save_path, meld_path, feature_set, transcription_type,
-                          glove_path)
+    save_partitioned_data(
+        "meld", save_path, meld_path, feature_set, transcription_type, glove_path
+    )
 
-    save_partitioned_data("mustard", save_path, mustard_path, feature_set, transcription_type,
-                          glove_path)
+    save_partitioned_data(
+        "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path
+    )
 
-    save_partitioned_data("ravdess", save_path, ravdess_path, feature_set, transcription_type,
-                          glove_path)
+    save_partitioned_data(
+        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path
+    )
