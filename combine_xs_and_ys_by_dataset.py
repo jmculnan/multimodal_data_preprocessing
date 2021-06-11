@@ -186,6 +186,7 @@ def combine_xs_and_ys_mosi(
             )
     # to do a 7-class classification
     elif pred_type == "classification":
+        sent2score = {-3: 0, -2: 1, -1: 2, 0: 3, 1: 4, 2: 5, 3: 6}
         for i, item in enumerate(acoustic_data):
             item_transformed = transform_acoustic_item(
                 item, acoustic_means, acoustic_stdev
@@ -196,7 +197,7 @@ def combine_xs_and_ys_mosi(
                     data_dict["all_utts"][i].clone().detach(),
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
-                    torch.tensor(round(data_dict["all_sentiments"][i].item())),
+                    torch.tensor(sent2score[round(data_dict["all_sentiments"][i].item())]),
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -206,11 +207,11 @@ def combine_xs_and_ys_mosi(
     elif pred_type == "ternary":
         for i, item in enumerate(acoustic_data):
             if data_dict["all_sentiments"][i] > 0:
-                sentiment_val = 1
-            elif data_dict["all_sentiments"][i] == 0:
-                sentiment_val = 0
-            else:
                 sentiment_val = 2
+            elif data_dict["all_sentiments"][i] == 0:
+                sentiment_val = 1
+            else:
+                sentiment_val = 0
             item_transformed = transform_acoustic_item(
                 item, acoustic_means, acoustic_stdev
             )

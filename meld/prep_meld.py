@@ -1,3 +1,5 @@
+from sklearn.model_selection import train_test_split
+
 from prep_data import *
 from utils.data_prep_helpers import Glove, make_glove_dict
 
@@ -37,6 +39,11 @@ def prep_meld_data(
     print("Now preparing test data")
     test_data = meld_prep.test_prep.combine_xs_and_ys()
 
+    # update train and dev
+    train_and_dev = train_data + dev_data
+    train_data, dev_data = train_test_split(train_and_dev, test_size=0.2)
+
+    # todo: fix weights so they are only coming from repartitioned train
     class_weights = meld_prep.train_prep.class_weights
 
     return train_data, dev_data, test_data, class_weights

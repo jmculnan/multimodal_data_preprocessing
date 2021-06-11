@@ -46,7 +46,7 @@ def prep_ravdess_data(
 
     # get class weights
     # todo: allow to get emotion or intensity or both
-    class_weights = ravdess_prep.emotion_weights
+    class_weights = ravdess_prep.intensity_weights
 
     return train_data, dev_data, test_data, class_weights
 
