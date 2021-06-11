@@ -126,26 +126,26 @@ if __name__ == "__main__":
 
     save_path = "../../datasets/pickled_data"
 
-    glove_path = "../../glove.short.300d.punct.txt"
+    glove_path = "../../datasets/glove/glove.subset.300d.txt"
 
     feature_set = "IS13"
 
-    transcription_type = "Gold"
+    transcription_type = "gold"
 
-    # save_partitioned_data("cdc", save_path, cdc_path, feature_set, transcription_type,
-    #                       glove_path)
+    save_partitioned_data("cdc", save_path, cdc_path, feature_set, transcription_type,
+                          glove_path)
 
-    # save_partitioned_data("mosi", save_path, mosi_path, feature_set, transcription_type,
-    #                       glove_path, pred_type="classification")
-    #
-    # save_partitioned_data("firstimpr", save_path, firstimpr_path, feature_set, transcription_type,
-    #                       glove_path, pred_type="max_class")
-    #
-    # save_partitioned_data("meld", save_path, meld_path, feature_set, transcription_type,
-    #                       glove_path)
-    #
-    # save_partitioned_data("mustard", save_path, mustard_path, feature_set, transcription_type,
-    #                       glove_path)
+    save_partitioned_data("mosi", save_path, mosi_path, feature_set, transcription_type,
+                          glove_path, pred_type="classification")
+
+    save_partitioned_data("firstimpr", save_path, firstimpr_path, feature_set, transcription_type,
+                          glove_path, pred_type="max_class")
+
+    save_partitioned_data("meld", save_path, meld_path, feature_set, transcription_type,
+                          glove_path)
+
+    save_partitioned_data("mustard", save_path, mustard_path, feature_set, transcription_type,
+                          glove_path)
 
     save_partitioned_data("ravdess", save_path, ravdess_path, feature_set, transcription_type,
                           glove_path)

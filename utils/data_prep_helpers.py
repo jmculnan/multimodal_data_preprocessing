@@ -244,6 +244,10 @@ def clean_up_word(word):
     word = word.replace("$", " $ ")
     word = word.replace("...", " ... ")
     word = word.replace("/", " / ")
+    word = word.replace(".", " . ")
+    word = word.replace(",", " , ")
+    word = word.replace("!", " ! ")
+    word = word.replace("?", " ? ")
     if word.strip() == "":
         word = "<UNK>"
     return word
