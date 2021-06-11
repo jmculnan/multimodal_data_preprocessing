@@ -16,10 +16,6 @@ from transformers import BertTokenizer, BertModel
 import statistics
 
 
-# classes
-from torch.utils.data.sampler import RandomSampler
-
-
 class DatumListDataset(Dataset):
     """
     A dataset to hold a list of datums
@@ -249,6 +245,10 @@ def clean_up_word(word):
     word = word.replace("$", " $ ")
     word = word.replace("...", " ... ")
     word = word.replace("/", " / ")
+    word = word.replace(".", " . ")
+    word = word.replace(",", " , ")
+    word = word.replace("!", " ! ")
+    word = word.replace("?", " ? ")
     if word.strip() == "":
         word = "<UNK>"
     return word
@@ -335,6 +335,9 @@ def get_class_weights(data_tensors_dict, data_type):
             for i, item in enumerate(data_tensors_dict["all_extraversion"])
         ]
         y_tensor = [item.index(max(item)) for item in ys]
+    # if ravdess, this is fed the processed list and not a tensor dict
+    elif data_type == "ravdess":
+        y_tensor = data_tensors_dict
     else:
         print(
             "data type does not have associated ys to get class weights; "

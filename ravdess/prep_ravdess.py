@@ -32,6 +32,7 @@ def prep_ravdess_data(
     # create instance of StandardPrep class
     ravdess_prep = RavdessPrep(
         ravdess_path=data_path,
+        feature_set=feature_set,
         glove=glove,
         train_prop=0.6,
         test_prop=0.2,
@@ -39,12 +40,9 @@ def prep_ravdess_data(
         use_cols=features_to_use,
     )
 
-    # get train, dev, test
-    train_data = ravdess_prep.normalize_acoustic_data_in_tensors(
-        ravdess_prep.train_data
-    )
-    dev_data = ravdess_prep.normalize_acoustic_data_in_tensors(ravdess_prep.dev_data)
-    test_data = ravdess_prep.normalize_acoustic_data_in_tensors(ravdess_prep.test_data)
+    train_data = ravdess_prep.train_data
+    dev_data = ravdess_prep.dev_data
+    test_data = ravdess_prep.test_data
 
     # get class weights
     # todo: allow to get emotion or intensity or both
@@ -61,23 +59,26 @@ class RavdessPrep:
     def __init__(
         self,
         ravdess_path,
+        feature_set,
         glove,
         train_prop=0.6,
         test_prop=0.2,
         f_end="IS10.csv",
         use_cols=None,
         add_avging=True,
-        avgd=False,
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
+
+        # get path to acoustic feature location
+        self.feature_path = f"{ravdess_path}/{feature_set}"
 
         # get tokenizer
         self.tokenizer = get_tokenizer("basic_english")
 
         # get data tensors
         self.all_data = make_ravdess_data_tensors(
-            self.path, glove, f_end, use_cols, add_avging=add_avging, avgd=avgd
+            self.feature_path, glove, f_end, use_cols, add_avging=add_avging
         )
 
         (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
@@ -85,45 +86,20 @@ class RavdessPrep:
         )
 
         # pull out ys from train to get class weights
-        self.train_y_emotion = torch.tensor([item[4] for item in self.train_data])
-        self.train_y_intensity = torch.tensor([item[5] for item in self.train_data])
+        self.train_y_intensity = torch.tensor([item[4] for item in self.train_data])
+        self.train_y_emotion = torch.tensor([item[5] for item in self.train_data])
 
         # set the sarcasm weights
-        self.emotion_weights = get_class_weights(self.train_y_emotion)
-        self.intensity_weights = get_class_weights(self.train_y_intensity)
-
-        # pull out acoustic data and gender data from train for normalization
-        self.train_acoustic = torch.tensor(
-            [item[0].tolist() for item in self.train_data]
+        self.emotion_weights = get_class_weights(
+            self.train_y_emotion, data_type="ravdess"
         )
-        self.train_genders = [item[3] for item in self.train_data]
-
-        # acoustic feature normalization based on train
-        self.acoustic_means = self.train_acoustic.mean(dim=0, keepdim=False)
-        self.acoustic_stdev = self.train_acoustic.std(dim=0, keepdim=False)
-        # self.male_acoustic_means, self.male_deviations = get_gender_avgs(
-        #     self.train_acoustic, self.train_genders, gender=2
-        # )
-        # self.female_acoustic_means, self.female_deviations = get_gender_avgs(
-        #     self.train_acoustic, self.train_genders, gender=1
-        # )
-
-    def normalize_acoustic_data_in_tensors(self, tensor_to_update):
-        """
-        Updated data tensors to be normalized by means
-        :return:
-        """
-        updated = tensor_to_update.copy().detach()
-        for i, item in enumerate(updated):
-            updated[i][0] = transform_acoustic_item(
-                updated[i][0], self.acoustic_means, self.acoustic_stdev
-            )
-
-        return updated
+        self.intensity_weights = get_class_weights(
+            self.train_y_intensity, data_type="ravdess"
+        )
 
 
 def make_ravdess_data_tensors(
-    acoustic_path, glove, f_end="_IS10.csv", use_cols=None, add_avging=True, avgd=False,
+    acoustic_path, glove, f_end="_IS10.csv", use_cols=None, add_avging=True,
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -165,8 +141,7 @@ def make_ravdess_data_tensors(
                 )
             else:
                 feats = pd.read_csv(acoustic_path + "/" + f, sep=separator)
-                if not avgd:
-                    feats.drop(["name", "frameTime"], axis=1, inplace=True)
+                feats.drop(["name", "frameTime"], axis=1, inplace=True)
 
             # get the labels
             all_labels = f.split("_")[0]
@@ -218,16 +193,25 @@ def make_ravdess_data_tensors(
         acoustic_holder = nn.utils.rnn.pad_sequence(
             acoustic_holder, batch_first=True, padding_value=0
         )
+    else:
+        acoustic_holder = torch.stack(acoustic_holder)
+        print(acoustic_holder.shape)
+
+    # get means, stdev
+    acoustic_means, acoustic_stdev = get_acoustic_means(acoustic_holder)
 
     for i in range(len(acoustic_holder)):
+        acoustic_data = transform_acoustic_item(
+            acoustic_holder[i], acoustic_means, acoustic_stdev
+        )
         data.append(
             (
-                acoustic_holder[i],
+                acoustic_data,
                 utterances[i],
                 speakers[i],
                 genders[i],
-                emotions[i],
                 intensities[i],
+                emotions[i],
                 repetitions[i],
                 6,
                 acoustic_lengths[i],
