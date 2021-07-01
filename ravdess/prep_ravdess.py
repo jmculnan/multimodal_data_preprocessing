@@ -90,8 +90,12 @@ class RavdessPrep:
         )
 
         # pull out ys from train to get class weights
-        self.train_y_intensity = torch.tensor([item[4] for item in self.train_data])
-        self.train_y_emotion = torch.tensor([item[5] for item in self.train_data])
+        if as_dict:
+            self.train_y_intensity = torch.tensor([item["ys"][0] for item in self.train_data])
+            self.train_y_emotion = torch.tensor([item["ys"][1] for item in self.train_data])
+        else:
+            self.train_y_intensity = torch.tensor([item[4] for item in self.train_data])
+            self.train_y_emotion = torch.tensor([item[5] for item in self.train_data])
 
         # set the sarcasm weights
         self.emotion_weights = get_class_weights(
