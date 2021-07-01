@@ -485,6 +485,20 @@ def get_nonzero_avg(tensor):
     return nonzero_avg
 
 
+def look_up_num_classes(dataset_name):
+    """
+    Look up the number of classes in a dataset if given the name
+    :param dataset_name: Name of the dataset of interest
+    :return:
+    """
+    all_datasets = {"cdc": 2, "mosi_ternary": 3,
+                    "mosi_all": 7, "firstimpr_binary": 2,
+                    "firstimpr_ternary": 3, "firstimpr_maxclass": 5,
+                    "meld": [7, 3], "mustard": 2, "ravdess": [8, 2]}
+
+    return all_datasets[dataset_name]
+
+
 def make_glove_dict(glove_path):
     """creates a dict of word: embedding pairs
     :param glove_path: the path to our glove file

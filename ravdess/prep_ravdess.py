@@ -24,6 +24,7 @@ def prep_ravdess_data(
     feature_set="IS13",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
+    as_dict=False
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -38,6 +39,7 @@ def prep_ravdess_data(
         test_prop=0.2,
         f_end=f"{feature_set}.csv",
         use_cols=features_to_use,
+        as_dict=as_dict
     )
 
     train_data = ravdess_prep.train_data
@@ -66,6 +68,7 @@ class RavdessPrep:
         f_end="IS10.csv",
         use_cols=None,
         add_avging=True,
+        as_dict=False
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -78,7 +81,8 @@ class RavdessPrep:
 
         # get data tensors
         self.all_data = make_ravdess_data_tensors(
-            self.feature_path, glove, f_end, use_cols, add_avging=add_avging
+            self.feature_path, glove, f_end, use_cols, add_avging=add_avging,
+            as_dict=as_dict
         )
 
         (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
@@ -100,6 +104,7 @@ class RavdessPrep:
 
 def make_ravdess_data_tensors(
     acoustic_path, glove, f_end="_IS10.csv", use_cols=None, add_avging=True,
+    as_dict=False
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -200,23 +205,42 @@ def make_ravdess_data_tensors(
     # get means, stdev
     acoustic_means, acoustic_stdev = get_acoustic_means(acoustic_holder)
 
-    for i in range(len(acoustic_holder)):
-        acoustic_data = transform_acoustic_item(
-            acoustic_holder[i], acoustic_means, acoustic_stdev
-        )
-        data.append(
-            (
-                acoustic_data,
-                utterances[i],
-                speakers[i],
-                genders[i],
-                intensities[i],
-                emotions[i],
-                repetitions[i],
-                6,
-                acoustic_lengths[i],
+    if as_dict:
+        for i in range(len(acoustic_holder)):
+            acoustic_data = transform_acoustic_item(
+                acoustic_holder[i], acoustic_means, acoustic_stdev
             )
-        )
+            data.append(
+                {
+                    "x_acoustic": acoustic_data,
+                    "x_utt": utterances[i],
+                    "x_speaker": speakers[i],
+                    "x_gender": genders[i],
+                    "ys": [intensities[i],
+                           emotions[i]],
+                    "repetition": repetitions[i],
+                    "utt_length": 6,
+                    "acoustic_length": acoustic_lengths[i],
+                }
+            )
+    else:
+        for i in range(len(acoustic_holder)):
+            acoustic_data = transform_acoustic_item(
+                acoustic_holder[i], acoustic_means, acoustic_stdev
+            )
+            data.append(
+                (
+                    acoustic_data,
+                    utterances[i],
+                    speakers[i],
+                    genders[i],
+                    intensities[i],
+                    emotions[i],
+                    repetitions[i],
+                    6,
+                    acoustic_lengths[i],
+                )
+            )
 
     return data
 

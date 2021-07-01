@@ -156,6 +156,7 @@ class SelfSplitPrep:
         train_prop=0.6,
         test_prop=0.2,
         pred_type=None,
+        as_dict=False
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -215,7 +216,7 @@ class SelfSplitPrep:
         if pred_type is not None:
             self.train_prep.add_pred_type(pred_type)
 
-        self.data = self.train_prep.combine_xs_and_ys(speaker2idx)
+        self.data = self.train_prep.combine_xs_and_ys(speaker2idx, as_dict)
 
     def get_data_folds(self):
         train_data, dev_data, test_data = create_data_folds_list(
@@ -312,7 +313,7 @@ class DataPrep:
         self.acoustic_means = means
         self.acoustic_stdev = stdev
 
-    def combine_xs_and_ys(self, speaker2idx=None):
+    def combine_xs_and_ys(self, speaker2idx=None, as_dict=False):
         """
         Combine the xs and y data
         :return: all data as list of tuples of tensors
@@ -324,6 +325,7 @@ class DataPrep:
                 self.acoustic_lengths,
                 self.acoustic_means,
                 self.acoustic_stdev,
+                as_dict=as_dict
             )
         elif self.d_type == "mustard":
             combined = combine_xs_and_ys_mustard(
@@ -333,6 +335,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
+                as_dict=as_dict
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             combined = combine_xs_and_ys_chalearn(
@@ -342,6 +345,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 pred_type=self.pred_type,
+                as_dict=as_dict
             )
         elif self.d_type == "cdc":
             combined = combine_xs_and_ys_cdc(
@@ -351,6 +355,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
+                as_dict=as_dict
             )
         elif (
             self.d_type == "mosi"
@@ -365,6 +370,7 @@ class DataPrep:
                 self.acoustic_stdev,
                 speaker2idx,
                 pred_type=self.pred_type,
+                as_dict=as_dict
             )
 
         return combined

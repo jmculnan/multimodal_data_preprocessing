@@ -10,6 +10,7 @@ def prep_meld_data(
     transcription_type="gold",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
+    as_dict=False
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -33,11 +34,11 @@ def prep_meld_data(
     )
 
     print("Now preparing training data")
-    train_data = meld_prep.train_prep.combine_xs_and_ys()
+    train_data = meld_prep.train_prep.combine_xs_and_ys(as_dict=as_dict)
     print("Now preparing development data")
-    dev_data = meld_prep.dev_prep.combine_xs_and_ys()
+    dev_data = meld_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
     print("Now preparing test data")
-    test_data = meld_prep.test_prep.combine_xs_and_ys()
+    test_data = meld_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
 
     # update train and dev
     train_and_dev = train_data + dev_data

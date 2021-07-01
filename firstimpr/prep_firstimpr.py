@@ -9,6 +9,7 @@ def prep_firstimpr_data(
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     pred_type="max_class",
+    as_dict=False
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -38,11 +39,11 @@ def prep_firstimpr_data(
 
     # get train, dev, test data
     print("Now preparing training data")
-    train_data = firstimpr_prep.train_prep.combine_xs_and_ys()
+    train_data = firstimpr_prep.train_prep.combine_xs_and_ys(as_dict=as_dict)
     print("Now preparing development data")
-    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys()
+    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
     print("Now preparing test data")
-    test_data = firstimpr_prep.test_prep.combine_xs_and_ys()
+    test_data = firstimpr_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
 
     # get class weights
     class_weights = firstimpr_prep.train_prep.class_weights

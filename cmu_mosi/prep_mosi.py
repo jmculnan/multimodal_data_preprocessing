@@ -14,6 +14,7 @@ def prep_mosi_data(
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     pred_type="classification",
+    as_dict=False
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -31,13 +32,17 @@ def prep_mosi_data(
         glove=glove,
         use_cols=features_to_use,
         pred_type=pred_type,
+        as_dict=as_dict
     )
 
     # get train, dev, test data
     train_data, dev_data, test_data = mosi_prep.get_data_folds()
 
     # get train ys
-    train_ys = [int(item[4]) for item in train_data]
+    if as_dict:
+        train_ys = [int(item["ys"][0]) for item in train_data]
+    else:
+        train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
     class_weights = mosi_prep.get_updated_class_weights(train_ys)

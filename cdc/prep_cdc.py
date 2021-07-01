@@ -19,6 +19,7 @@ def prep_cdc_data(
     transcription_type="gold",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
+    as_dict=False
 ):
     # load glove
     glove_dict = make_glove_dict(glove_filepath)
@@ -35,13 +36,17 @@ def prep_cdc_data(
         utterance_fname=utts_name,
         glove=glove,
         use_cols=features_to_use,
+        as_dict=as_dict
     )
 
     # get train, dev, test data
     train_data, dev_data, test_data = cdc_prep.get_data_folds()
 
     # get train ys
-    train_ys = [int(item[4]) for item in train_data]
+    if as_dict:
+        train_ys = [int(item["ys"][0]) for item in train_data]
+    else:
+        train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
     class_weights = cdc_prep.get_updated_class_weights(train_ys)
