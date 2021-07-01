@@ -90,6 +90,7 @@ def prep_data(
     glove_path,
     feats_to_use,
     pred_type=None,
+    data_as_dict=False
 ):
     """
     Prepare data for a given dataset
@@ -98,9 +99,14 @@ def prep_data(
     """
     dataset = dataset.lower()
 
+    print("-------------------------------------------")
+    print(f"Starting dataset prep for {dataset}")
+    print("-------------------------------------------")
+
     if dataset == "cdc":
         train, dev, test, weights = prep_cdc_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use
+            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            as_dict=data_as_dict
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
         train, dev, test, weights = prep_mosi_data(
@@ -110,6 +116,7 @@ def prep_data(
             glove_path,
             feats_to_use,
             pred_type,
+            as_dict=data_as_dict
         )
     elif dataset == "firstimpr" or dataset == "chalearn":
         train, dev, test, weights = prep_firstimpr_data(
@@ -119,18 +126,22 @@ def prep_data(
             glove_path,
             feats_to_use,
             pred_type,
+            as_dict=data_as_dict
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use
+            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            as_dict=data_as_dict
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use
+            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            as_dict=data_as_dict
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
-            data_path, feature_set, glove_path, feats_to_use
+            data_path, feature_set, glove_path, feats_to_use,
+            as_dict=data_as_dict
         )
 
     return train, dev, test, weights
