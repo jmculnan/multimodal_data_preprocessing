@@ -19,6 +19,7 @@ def save_partitioned_data(
     feature_set,
     transcription_type,
     glove_path,
+    emb_type,
     feats_to_use=None,
     pred_type=None,
     zip=False,
@@ -31,6 +32,7 @@ def save_partitioned_data(
     :param feature_set: IS09-13
     :param transcription_type: Gold, Google, Kaldi, Sphinx
     :param glove_path: path to glove file
+    :param emb_type: whether to use glove or distilbert
     :param feats_to_use: list of features, if needed
     :param pred_type: type of predictions, for mosi and firstimpr
     :parak zip: whether to save as a bz2 compressed file
@@ -54,31 +56,31 @@ def save_partitioned_data(
     if zip:
         pickle.dump(
             train_ds,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_train.bz2", "wb"),
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_train.bz2", "wb"),
         )
         pickle.dump(
-            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_dev.bz2", "wb")
+            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_dev.bz2", "wb")
         )
         pickle.dump(
-            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_test.bz2", "wb")
+            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_test.bz2", "wb")
         )
         pickle.dump(
             clss_weights,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_clsswts.bz2", "wb"),
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_clsswts.bz2", "wb"),
         )
     else:
         pickle.dump(
-            train_ds, open(f"{save_path}/{dataset}_{feature_set}_train.pickle", "wb")
+            train_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_train.pickle", "wb")
         )
         pickle.dump(
-            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_dev.pickle", "wb")
+            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_dev.pickle", "wb")
         )
         pickle.dump(
-            test_ds, open(f"{save_path}/{dataset}_{feature_set}_test.pickle", "wb")
+            test_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_test.pickle", "wb")
         )
         pickle.dump(
             clss_weights,
-            open(f"{save_path}/{dataset}_{feature_set}_clsswts.pickle", "wb"),
+            open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_clsswts.pickle", "wb"),
         )
 
 
@@ -105,7 +107,7 @@ def prep_data(
 
     if dataset == "cdc":
         train, dev, test, weights = prep_cdc_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            data_path, feature_set, transcription_type, "distilbert",  glove_path, feats_to_use,
             as_dict=data_as_dict
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
@@ -113,6 +115,7 @@ def prep_data(
             data_path,
             feature_set,
             transcription_type,
+            "distilbert",
             glove_path,
             feats_to_use,
             pred_type,
@@ -123,6 +126,7 @@ def prep_data(
             data_path,
             feature_set,
             transcription_type,
+            "distilbert",
             glove_path,
             feats_to_use,
             pred_type,
@@ -130,17 +134,17 @@ def prep_data(
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            data_path, feature_set, transcription_type, "distilbert", glove_path, feats_to_use,
             as_dict=data_as_dict
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
-            data_path, feature_set, transcription_type, glove_path, feats_to_use,
+            data_path, feature_set, transcription_type, "distilbert", glove_path, feats_to_use,
             as_dict=data_as_dict
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
-            data_path, feature_set, glove_path, feats_to_use,
+            data_path, feature_set, "distilbert", glove_path, feats_to_use,
             as_dict=data_as_dict
         )
 
@@ -200,38 +204,40 @@ if __name__ == "__main__":
 
     transcription_type = "gold"
 
-    save_partitioned_data(
-        "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path
-    )
+    # save_partitioned_data(
+    #     "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+    # )
+
+    # save_partitioned_data(
+    #     "mosi",
+    #     save_path,
+    #     mosi_path,
+    #     feature_set,
+    #     transcription_type,
+    #     glove_path,
+    #     pred_type="classification",
+    #     emb_type="distilbert"
+    # )
+
+    # save_partitioned_data(
+    #     "firstimpr",
+    #     save_path,
+    #     firstimpr_path,
+    #     feature_set,
+    #     transcription_type,
+    #     glove_path,
+    #     pred_type="max_class",
+    #     emb_type="distilbert"
+    # )
+
+    # save_partitioned_data(
+    #     "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+    # )
+    #
+    # save_partitioned_data(
+    #     "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+    # )
 
     save_partitioned_data(
-        "mosi",
-        save_path,
-        mosi_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        pred_type="classification",
-    )
-
-    save_partitioned_data(
-        "firstimpr",
-        save_path,
-        firstimpr_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        pred_type="max_class",
-    )
-
-    save_partitioned_data(
-        "meld", save_path, meld_path, feature_set, transcription_type, glove_path
-    )
-
-    save_partitioned_data(
-        "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path
-    )
-
-    save_partitioned_data(
-        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path
+        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
     )

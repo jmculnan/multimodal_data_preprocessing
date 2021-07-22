@@ -22,13 +22,17 @@ from utils.data_prep_helpers import (
 def prep_ravdess_data(
     data_path="../../datasets/multimodal_datasets/RAVDESS_Speech",
     feature_set="IS13",
+    embedding_type="distilbert",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     as_dict=False
 ):
     # load glove
-    glove_dict = make_glove_dict(glove_filepath)
-    glove = Glove(glove_dict)
+    if embedding_type.lower() == "glove":
+        glove_dict = make_glove_dict(glove_filepath)
+        glove = Glove(glove_dict)
+    else:
+        glove = None
 
     # create instance of StandardPrep class
     ravdess_prep = RavdessPrep(
@@ -107,7 +111,7 @@ class RavdessPrep:
 
 
 def make_ravdess_data_tensors(
-    acoustic_path, glove, f_end="_IS10.csv", use_cols=None, add_avging=True,
+    acoustic_path, glove=None, f_end="_IS10.csv", use_cols=None, add_avging=True,
     as_dict=False
 ):
     """
@@ -130,8 +134,18 @@ def make_ravdess_data_tensors(
     # holder for all data
     data = []
 
-    utt_1 = glove.index(["kids", "are", "talking", "by", "the", "door"])
-    utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
+    if glove is not None:
+        utt_1 = glove.index(["kids", "are", "talking", "by", "the", "door"])
+        utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
+    else:
+        # instantiate embeddings maker
+        emb_maker = DistilBertEmb()
+        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
+        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1))
+        print(utt_1.size())
+        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
+        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2))
+        print(utt_2.size())
 
     # will have to do two for loops
     # one to get the longest acoustic df
@@ -190,8 +204,12 @@ def make_ravdess_data_tensors(
                 acoustic_lengths.append(feats.shape[0])
 
     # convert data to torch tensors
-    utterances = torch.tensor(utterances)
-    speakers = torch.tensor(utterances)
+    if glove is not None:
+        utterances = torch.tensor(utterances)
+    else:
+        utterances = torch.stack(utterances)
+        utterances = torch.squeeze(utterances, dim=0)
+    speakers = torch.tensor(speakers)
     genders = torch.tensor(genders)
     emotions = torch.tensor(emotions)
     intensities = torch.tensor(intensities)
@@ -216,15 +234,15 @@ def make_ravdess_data_tensors(
             )
             data.append(
                 {
-                    "x_acoustic": acoustic_data,
-                    "x_utt": utterances[i],
-                    "x_speaker": speakers[i],
-                    "x_gender": genders[i],
-                    "ys": [intensities[i],
-                           emotions[i]],
-                    "repetition": repetitions[i],
+                    "x_acoustic": acoustic_data.clone().detach(),
+                    "x_utt": utterances[i].clone().detach(),
+                    "x_speaker": speakers[i].clone().detach(),
+                    "x_gender": genders[i].clone().detach(),
+                    "ys": [intensities[i].clone().detach(),
+                           emotions[i].clone().detach()],
+                    "repetition": repetitions[i].clone().detach(),
                     "utt_length": 6,
-                    "acoustic_length": acoustic_lengths[i],
+                    "acoustic_length": acoustic_lengths[i].clone().detach(),
                 }
             )
     else:
@@ -234,15 +252,15 @@ def make_ravdess_data_tensors(
             )
             data.append(
                 (
-                    acoustic_data,
-                    utterances[i],
-                    speakers[i],
-                    genders[i],
-                    intensities[i],
-                    emotions[i],
-                    repetitions[i],
+                    acoustic_data.clone().detach(),
+                    utterances[i].clone().detach(),
+                    speakers[i].clone().detach(),
+                    genders[i].clone().detach(),
+                    intensities[i].clone().detach(),
+                    emotions[i].clone().detach(),
+                    repetitions[i].clone().detach(),
                     6,
-                    acoustic_lengths[i],
+                    acoustic_lengths[i].clone().detach(),
                 )
             )
 

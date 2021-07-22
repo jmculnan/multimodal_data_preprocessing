@@ -37,6 +37,8 @@ from utils.data_prep_helpers import (
     create_data_folds_list,
 )
 
+from bert.prepare_bert_embeddings import *
+
 
 class StandardPrep:
     """
@@ -49,7 +51,7 @@ class StandardPrep:
         data_path,
         feature_set,
         utterance_fname,
-        glove,
+        glove=None,
         transcription_type="gold",
         use_cols=None,
     ):
@@ -85,7 +87,10 @@ class StandardPrep:
         all_data = pd.concat([train_data, dev_data, test_data], axis=0)
 
         # set tokenizer
-        self.tokenizer = get_tokenizer("basic_english")
+        if glove is None:
+            self.tokenizer = get_distilbert_tokenizer()
+        else:
+            self.tokenizer = get_tokenizer("basic_english")
 
         # get longest utt
         self.longest_utt = get_longest_utt(all_data, self.tokenizer)
@@ -151,7 +156,7 @@ class SelfSplitPrep:
         data_path,
         feature_set,
         utterance_fname,
-        glove,
+        glove=None,
         use_cols=None,
         train_prop=0.6,
         test_prop=0.2,
@@ -252,8 +257,8 @@ class DataPrep:
         acoustic_cols_used,
         longest_utt,
         longest_acoustic,
-        glove,
-        partition,
+        glove=None,
+        partition="train",
         add_avging=True,
     ):
         # set data type
@@ -460,7 +465,7 @@ class DataPrep:
 
         return all_acoustic, ordered_acoustic_lengths
 
-    def make_data_tensors(self, text_data, longest_utt, glove):
+    def make_data_tensors(self, text_data, longest_utt, glove=None):
         """
         Prepare tensors of utterances, genders, gold labels
         :param text_data: the df containing the text, gold, etc
@@ -470,19 +475,19 @@ class DataPrep:
         """
         if self.d_type == "meld":
             data_tensor_dict = make_data_tensors_meld(
-                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove
             )
         elif self.d_type == "mustard":
             data_tensor_dict = make_data_tensors_mustard(
-                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             data_tensor_dict = make_data_tensors_chalearn(
-                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove
             )
         elif self.d_type == "cdc":
             data_tensor_dict = make_data_tensors_cdc(
-                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove
             )
         elif (
             self.d_type == "mosi"
@@ -490,7 +495,7 @@ class DataPrep:
             or self.d_type == "cmu-mosi"
         ):
             data_tensor_dict = make_data_tensors_mosi(
-                text_data, self.used_ids, longest_utt, glove, self.tokenizer
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove
             )
 
         return data_tensor_dict

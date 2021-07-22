@@ -7,3 +7,6 @@
 
 # opensmile
 smile.log
+
+# other
+.DS_Store

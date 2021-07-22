@@ -6,14 +6,18 @@ def prep_firstimpr_data(
     data_path="../../datasets/multimodal_datasets/chalearn",
     feature_set="IS13",
     transcription_type="gold",
+    embedding_type="distilbert",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     pred_type="max_class",
     as_dict=False
 ):
     # load glove
-    glove_dict = make_glove_dict(glove_filepath)
-    glove = Glove(glove_dict)
+    if embedding_type.lower() == "glove":
+        glove_dict = make_glove_dict(glove_filepath)
+        glove = Glove(glove_dict)
+    else:
+        glove = None
 
     # holder for name of file containing utterance info
     if transcription_type.lower() == "gold":

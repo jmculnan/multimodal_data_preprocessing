@@ -2,19 +2,24 @@ from sklearn.model_selection import train_test_split
 
 from prep_data import *
 from utils.data_prep_helpers import Glove, make_glove_dict
+from bert.prepare_bert_embeddings import *
 
 
 def prep_meld_data(
     data_path="../../datasets/multimodal_datasets/meld_formatted",
     feature_set="IS13",
     transcription_type="gold",
+    embedding_type="distilbert",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     as_dict=False
 ):
     # load glove
-    glove_dict = make_glove_dict(glove_filepath)
-    glove = Glove(glove_dict)
+    if embedding_type.lower() == "glove":
+        glove_dict = make_glove_dict(glove_filepath)
+        glove = Glove(glove_dict)
+    else:
+        glove = None
 
     # holder for name of file containing utterance info
     if transcription_type.lower() == "gold":

@@ -491,6 +491,8 @@ def look_up_num_classes(dataset_name):
     :param dataset_name: Name of the dataset of interest
     :return:
     """
+    # todo: need to fix this to be name of classes instead of number
+    #   because of 2 sets of emotion tags
     all_datasets = {"cdc": 2, "mosi_ternary": 3,
                     "mosi_all": 7, "firstimpr_binary": 2,
                     "firstimpr_ternary": 3, "firstimpr_maxclass": 5,
