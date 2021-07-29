@@ -12,7 +12,7 @@ def create_constructed_data(
         transcription_type,
         glove_path,
         feats_to_use=None,
-        combine_partitions=True
+        combine_partitions=True,
 ):
     """
     Get a constructed dataset containing all data
@@ -73,6 +73,37 @@ def create_constructed_data(
     print(combined_data[::10000])
     # return altered dataset
     return combined_data
+
+
+def select_by_class(dataset, class_nums, gold_idx=4, data_is_dict=False, ys_idx=0):
+    """
+    Select a portion of a dataset consisting of a specific class number
+    :param dataset: The dataset from which to extract classes
+    :param class_nums: A list of class numbers to extract
+    :param gold_idx: The index containing gold y value
+    :param data_is_dict: Whether each datapoint is a dict
+    :param ys_idx: the index of relevant task in the dataset ys list
+    only relevant when data is a dict
+    :return: a dataset composed only of desired classes
+    """
+    # create a dataset holder
+    data_subset = []
+
+    # for item in dataset
+    for item in dataset:
+
+        # if item[class_num_idx] in class_nums
+        if data_is_dict:
+            # ys is a key, val is a list of lists
+            if item["ys"][ys_idx][gold_idx] in class_nums:
+                data_subset.append(item)
+        else:
+            if item[gold_idx] in class_nums:
+                # add to dataset holder
+                data_subset.append(item)
+
+    # return
+    return data_subset
 
 
 if __name__ == "__main__":
