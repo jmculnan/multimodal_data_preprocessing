@@ -3,6 +3,83 @@
 
 from scripts.save_partitioned_data import prep_data
 from utils.data_prep_helpers import look_up_num_classes
+import pickle
+
+
+class ConstructedDataset:
+    def __init__(self, pickled_dataset):
+        """
+        :param pickled_dataset: path to a pickled data file
+        """
+        self.pickled = pickled_dataset
+        self.dataset = self.unpickle()
+        self.data_is_dict = True if type(self.dataset[0]) == dict else False
+
+        if self.data_is_dict:
+            self.task_num = 0
+        else:
+            # get ys idx
+            self.ys_idx = 4
+
+        self.class_nums = []
+
+    def unpickle(self):
+        with open(self.pickled, 'rb') as pfile:
+            unpickled = pickle.load(pfile)
+
+        return unpickled
+
+    def change_task(self, new_num):
+        # change task
+        if self.data_is_dict:
+            # use place in ys list if data as dict
+            self.task_num = new_num
+        else:
+            # else use place in overall list
+            self.ys_idx = new_num
+
+    def add_class_nums(self, numslist):
+        for num in numslist:
+            self.class_nums.append(num)
+
+    def select_by_class(self):
+        """
+        Select a portion of a dataset consisting of a specific class number
+        :return: a dataset composed only of desired classes
+        """
+        # create a dataset holder
+        data_subset = []
+
+        # for item in dataset
+        for item in self.dataset:
+
+            # if item[class_num_idx] in class_nums
+            if self.data_is_dict:
+                # ys is a key, val is a list of lists
+                if item["ys"][self.task_num] in self.class_nums:
+                    data_subset.append(item)
+            else:
+                if item[self.ys_idx] in self.class_nums:
+                    # add to dataset holder
+                    data_subset.append(item)
+
+        # return
+        return data_subset
+
+    def save_constructed_task(self, constructed_task, save_path, save_name):
+        pickle.dump(
+            constructed_task, open(f"{save_path}/{save_name}.pickle", "wb")
+        )
+
+
+def get_multiple_constructed_datasets():
+    """
+    Get multiple constructed datasets
+    Needed because train, dev, and test are separate pickle files
+    :return:
+    """
+    pass
+
 
 
 def create_constructed_data(
