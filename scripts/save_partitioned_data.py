@@ -23,6 +23,7 @@ def save_partitioned_data(
     feats_to_use=None,
     pred_type=None,
     zip=False,
+    data_as_dict=False
 ):
     """
     Save partitioned data in pickled format
@@ -35,7 +36,8 @@ def save_partitioned_data(
     :param emb_type: whether to use glove or distilbert
     :param feats_to_use: list of features, if needed
     :param pred_type: type of predictions, for mosi and firstimpr
-    :parak zip: whether to save as a bz2 compressed file
+    :param zip: whether to save as a bz2 compressed file
+    :param data_as_dict: whether each datapoint saves as a dict
     :return:
     """
     dataset = dataset.lower()
@@ -51,36 +53,42 @@ def save_partitioned_data(
         glove_path,
         feats_to_use,
         pred_type,
+        data_as_dict
     )
+
+    if data_as_dict:
+        dtype = "dict"
+    else:
+        dtype = "list"
 
     if zip:
         pickle.dump(
             train_ds,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_train.bz2", "wb"),
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.bz2", "wb"),
         )
         pickle.dump(
-            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_dev.bz2", "wb")
+            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.bz2", "wb")
         )
         pickle.dump(
-            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_test.bz2", "wb")
+            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.bz2", "wb")
         )
         pickle.dump(
             clss_weights,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_clsswts.bz2", "wb"),
+            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.bz2", "wb"),
         )
     else:
         pickle.dump(
-            train_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_train.pickle", "wb")
+            train_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.pickle", "wb")
         )
         pickle.dump(
-            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_dev.pickle", "wb")
+            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.pickle", "wb")
         )
         pickle.dump(
-            test_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_test.pickle", "wb")
+            test_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.pickle", "wb")
         )
         pickle.dump(
             clss_weights,
-            open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_clsswts.pickle", "wb"),
+            open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.pickle", "wb"),
         )
 
 
@@ -234,10 +242,11 @@ if __name__ == "__main__":
     #     "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
     # )
     #
-    # save_partitioned_data(
-    #     "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
-    # )
-
     save_partitioned_data(
-        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+        "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+        data_as_dict=True
     )
+
+    # save_partitioned_data(
+    #     "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+    # )
