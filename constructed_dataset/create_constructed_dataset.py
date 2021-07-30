@@ -1,9 +1,11 @@
 # create a constructed dataset by combining individual datasets
 # add task label to each
 
-from scripts.save_partitioned_data import prep_data
-from utils.data_prep_helpers import look_up_num_classes
 import pickle
+import random
+
+# set random seed for replicability
+random.seed(88)
 
 
 class ConstructedDataset:
@@ -68,10 +70,32 @@ class ConstructedDataset:
         pickle.dump(constructed_task, open(f"{save_path}/{save_name}.pickle", "wb"))
 
 
-def get_multiple_constructed_datasets(
+def make_constructed_dataset(
+    dataset,
+    task_num,
+    list_of_class_nums,
+):
+    """
+    Make a constructed dataset
+    :param dataset: the full dataset path
+    :param task_num: the task number
+    :param list_of_class_nums: a list of class nums needed in subset
+    :return: a list of lists for all relevant datapoints in the dataset
+    """
+    # get task
+    constructed = ConstructedDataset(dataset)
+    constructed.change_task(task_num)
+
+    # construct the dataset subset
+    cons_data = constructed.create_constructed_data(list_of_class_nums)
+
+    return cons_data
+
+
+def make_multiple_constructed_datasets(
     list_of_datasets,
     list_of_task_nums,
-    list_of_class_nums,
+    nested_list_of_class_nums,
     save_path,
     list_of_save_names=None,
 ):
@@ -81,7 +105,7 @@ def get_multiple_constructed_datasets(
     :param list_of_datasets: a list of dataset paths
     :param list_of_task_nums: a list of task_nums/ys_idx
         in the same order as list of datasets
-    :param list_of_class_nums: a list of lists of class nums
+    :param nested_list_of_class_nums: a list of lists of class nums
         in the same order as list of datasets
     :param save_path: path to dir where pickle files will be saved
     :param list_of_save_names: list of names to save datasets as
@@ -89,96 +113,87 @@ def get_multiple_constructed_datasets(
     :return:
     """
     for i, dataset in enumerate(list_of_datasets):
-        constructed = ConstructedDataset(dataset)
-        constructed.change_task(list_of_task_nums[i])
-        # construct the dataset subset
-        cons_data = constructed.create_constructed_data(list_of_class_nums[i])
+        data_points = make_constructed_dataset(dataset, list_of_task_nums[i], nested_list_of_class_nums[i])
 
         if list_of_save_names is None:
             the_name = dataset.split("/")[-1].split(".pickle")[0]
             the_task = f"task{str(list_of_task_nums[i])}"
-            the_classes = f"classes{'-'.join([str(n) for n in list_of_class_nums[i]])}"
+            the_classes = f"classes{'-'.join([str(n) for n in nested_list_of_class_nums[i]])}"
             save_name = f"{the_name}_{the_task}_{the_classes}"
         else:
             save_name = list_of_save_names[i]
 
         # save the data points for this task to pickle
-        constructed.save_constructed_task(cons_data, save_path, save_name)
+        pickle.dump(data_points, open(f"{save_path}/{save_name}.pickle", "wb"))
 
 
-# todo: one method that makes the constructed dataset, gets all the right datapoints and returns them (87-92)
-#       another that has the dataset lists, 1 by 1 calls the datasets through method 1 and returns
-#       alternative method that gathers all and saves final instead of saving each one
+def make_single_constructed_set_from_multiple_datasets(
+        list_of_datasets,
+        list_of_task_nums,
+        nested_list_of_class_nums,
+        save_path,
+        save_name=None,
+):
+    """
+    Take multiple datasets and combine relevant subsets of each into a single
+    constructed dataset that is saved
+    :param list_of_datasets: a list of dataset paths
+    :param list_of_task_nums: a list of task_nums/ys_idx
+        in the same order as list of datasets
+    :param nested_list_of_class_nums: a list of lists of class nums
+        in the same order as list of datasets
+    :param save_path: path to dir where pickle files will be saved
+    :param save_name: names to save dataset as
+        if None, name is taken from the dataset names + task + class nums
+    :return:
+    """
+    # holder for all data
+    all_data = []
 
-#
-# def create_constructed_data(
-#         data_list,
-#         data_paths,
-#         feature_set,
-#         transcription_type,
-#         glove_path,
-#         feats_to_use=None,
-#         combine_partitions=True,
-# ):
-#     """
-#     Get a constructed dataset containing all data
-#     :param data_list: A list of datasets to include
-#         if pred type is needed, that item should be
-#         a (dataset, predtype) double
-#     :param data_paths: list of paths to the datasets
-#     :return:
-#     """
-#     # set a counter for the number of classes
-#     classes = 0
-#
-#     # set holder for combined data
-#     combined_data = []
-#
-#     # get each dataset
-#     for i, dset in enumerate(data_list):
-#         # get the data folds
-#         if type(dset) == str:
-#             train, dev, test, clsswt = prep_data(dset, data_paths[i], feature_set, transcription_type, glove_path,
-#                                                  feats_to_use, data_as_dict=True)
-#             dset_name = dset
-#
-#         elif type(dset) == tuple:
-#             train, dev, test, clsswt = prep_data(dset[0], data_paths[i], feature_set, transcription_type, glove_path,
-#                                                  feats_to_use, dset[1], data_as_dict=True)
-#
-#             dset_name = f"{dset[0]}_{dset[1]}"
-#
-#         # combine partitions if need be
-#         if combine_partitions:
-#             all_data = train + dev + test
-#
-#         # get number of classes in this dataset
-#         num_classes = look_up_num_classes(dset_name)
-#
-#         # alter the y values (class numbers)
-#         for item in all_data:
-#             # set the dataset number
-#             item["dataset_num"] = i
-#             # set the class number out of the pool of all classes
-#             item["ys"][0] = item["ys"][0] + classes
-#             # if num_classes is a list, though, there are 2 y values
-#             if type(num_classes) == list:
-#                 # add both the number of classes in item 1 + classes counter
-#                 item["ys"][1] = item["ys"][1] + classes + num_classes[0]
-#
-#         # add updated data to all data holder
-#         combined_data.extend(all_data)
-#
-#         # add number of classes seen to class counter
-#         if type(num_classes) == list:
-#             num_classes = sum(num_classes)
-#
-#         classes += num_classes
-#
-#     print(classes)
-#     print(combined_data[::10000])
-#     # return altered dataset
-#     return combined_data
+    # counter for classes
+    total_classes = 0
+
+    # get names of all datasets
+    all_dataset_save_info = []
+
+    for i, dataset in enumerate(list_of_datasets):
+        # get save name information
+        # todo: this will result in long names
+        #   condense eventually
+        if save_name is None:
+            the_name = dataset.split("/")[-1].split(".pickle")[0]
+            the_task = f"{str(list_of_task_nums[i])}"
+            the_classes = f"{'-'.join([str(n) for n in nested_list_of_class_nums[i]])}"
+            all_dataset_save_info.append(f"{the_name}-t{the_task}-c{the_classes}")
+
+        # get relevant data
+        data_points = make_constructed_dataset(dataset, list_of_task_nums[i], nested_list_of_class_nums[i])
+
+        # change class numbers for ys data
+        for point in data_points:
+
+            # add original task + class num to separate key in dict
+            point["original_task_and_class"] = (list_of_task_nums[i], point["ys"][list_of_task_nums[i]])
+
+            # assumes data point is in dict format
+            point["ys"][list_of_task_nums[i]] += total_classes
+
+            # add point to data holder
+            all_data.append(point)
+
+        # increment counter of all classes
+        total_classes += len(nested_list_of_class_nums[i])
+
+    # shuffle the data
+    # uses random seed set at top of this script
+    random.shuffle(all_data)
+
+    # set the save name
+    if save_name is None:
+        save_name = "_".join(all_dataset_save_info)
+
+    # save the data points for this task to pickle
+    pickle.dump(all_data, open(f"{save_path}/{save_name}.pickle", "wb"))
 
 
 if __name__ == "__main__":
@@ -193,4 +208,5 @@ if __name__ == "__main__":
     tasks = [0, 0, 0]
     classes = [[1], [1], [1]]
 
-    get_multiple_constructed_datasets(all, tasks, classes, base_path)
+    make_multiple_constructed_datasets(all, tasks, classes, base_path)
+    make_single_constructed_set_from_multiple_datasets(all, tasks, classes, base_path)
