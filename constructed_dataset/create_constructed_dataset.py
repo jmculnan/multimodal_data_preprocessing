@@ -11,11 +11,8 @@ class ConstructedDataset:
         """
         :param pickled_dataset: path to a pickled data file
         """
-        self.pickled = pickled_dataset
-        self.dataset = self.unpickle()
+        self.dataset = self.unpickle(pickled_dataset)
         self.data_is_dict = True if type(self.dataset[0]) == dict else False
-
-        print(self.data_is_dict)
 
         if self.data_is_dict:
             self.task_num = 0
@@ -23,10 +20,8 @@ class ConstructedDataset:
             # get ys idx
             self.ys_idx = 4
 
-        self.class_nums = []
-
-    def unpickle(self):
-        with open(self.pickled, 'rb') as pfile:
+    def unpickle(self, pickled):
+        with open(pickled, 'rb') as pfile:
             unpickled = pickle.load(pfile)
 
         return unpickled
@@ -44,9 +39,10 @@ class ConstructedDataset:
         for num in numslist:
             self.class_nums.append(num)
 
-    def create_constructed_data(self):
+    def create_constructed_data(self, class_nums):
         """
         Select a portion of a dataset consisting of a specific class number
+        :param class_nums: a list of classes to select from a given dataset
         :return: a dataset composed only of desired classes
         """
         # create a dataset holder
@@ -58,10 +54,10 @@ class ConstructedDataset:
             # if item[class_num_idx] in class_nums
             if self.data_is_dict:
                 # ys is a key, val is a list of lists
-                if item["ys"][self.task_num] in self.class_nums:
+                if item["ys"][self.task_num] in class_nums:
                     data_subset.append(item)
             else:
-                if item[self.ys_idx] in self.class_nums:
+                if item[self.ys_idx] in class_nums:
                     # add to dataset holder
                     data_subset.append(item)
 
@@ -92,8 +88,8 @@ def get_multiple_constructed_datasets(list_of_datasets, list_of_task_nums, list_
     for i, dataset in enumerate(list_of_datasets):
         constructed = ConstructedDataset(dataset)
         constructed.change_task(list_of_task_nums[i])
-        constructed.add_class_nums(list_of_class_nums[i])
-        cons_data = constructed.create_constructed_data()
+        # construct the dataset subset
+        cons_data = constructed.create_constructed_data(list_of_class_nums[i])
 
         if list_of_save_names is None:
             the_name = dataset.split('/')[-1].split('.pickle')[0]
@@ -102,8 +98,13 @@ def get_multiple_constructed_datasets(list_of_datasets, list_of_task_nums, list_
             save_name = f"{the_name}_{the_task}_{the_classes}"
         else:
             save_name = list_of_save_names[i]
+
+        # save the data points for this task to pickle
         constructed.save_constructed_task(cons_data, save_path, save_name)
 
+# todo: one method that makes the constructed dataset, gets all the right datapoints and returns them (87-92)
+#       another that has the dataset lists, 1 by 1 calls the datasets through method 1 and returns
+#       alternative method that gathers all and saves final instead of saving each one
 
 #
 # def create_constructed_data(

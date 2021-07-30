@@ -13,7 +13,6 @@ class DistilBertEmb():
 
         # Load pre-trained model (weights)
         self.model = DistilBertModel.from_pretrained('distilbert-base-uncased',
-                                                     # todo: this model exists, make sure it works here
                                                      output_hidden_states=True,
                                                      )
         self.model.eval()
@@ -31,7 +30,9 @@ class DistilBertEmb():
         idx_tokens = self.tokenizer.convert_tokens_to_ids(tokens)
         idx_tokens = torch.tensor(idx_tokens)
         idx_tokens = idx_tokens.unsqueeze(0)
+        # can use this creatively during fine-tuning
         ids = [1] * len(tokens)
+
         return idx_tokens, ids
 
     def get_embeddings(self, utt_tensor, id_tensor):
@@ -89,88 +90,3 @@ class DistilBertEmb():
         embeddings = torch.squeeze(embeddings, dim=0)
 
         return embeddings
-
-
-
-# as separate functions
-def get_distilbert_tokenizer():
-    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', do_lower_case=True)
-    return tokenizer
-
-
-def distilbert_tokenize(sent, tokenizer):
-    """
-    Tokenize a sentence with bert tokenizer
-    :param sent: A sentence to tokenize
-    :return: tokenized sentence and corresponding vector of 1s
-    """
-    sent = "[CLS] " + sent + " [SEP]"
-    tokens = tokenizer.tokenize(sent)
-    ids = [1] * len(tokens)
-    return tokens, ids
-
-
-def tokenize_all(utts_list):
-    """
-    :param utts_list: a list of all utts
-    :return: a tensor of tokenized utts
-    """
-    tokenized_utts = []
-    tokenized_ids = []
-    for utt in utts_list:
-        tokenized, ids = distilbert_tokenize(utt)
-        tokenized_utts.append(tokenized)
-        tokenized_ids.append(ids)
-
-    return torch.tensor(tokenized_utts), torch.tensor(tokenized_ids)
-
-
-def get_all_embeddings(utts_tensor, ids_tensor):
-    """
-    For a tensor of ALL utts from ALL datasets
-    Get embeddings from penultimate layer of bert
-    :param utts_tensor: a tensor of tokenized utterances
-    :param ids_tensor: a tensor of ids for utterances (0 or 1)
-    todo: ids_tensor is currently all 1s bc of the nature of our data
-    :return:
-    """
-    # prepare holder for embeddings
-
-    # Load pre-trained model (weights)
-    model = DistilBertModel.from_pretrained('distilbert-base-uncased',
-                                            # todo: this model exists, make sure it works here
-                                            output_hidden_states=True,  # Whether the model returns all hidden-states.
-                                            )
-    model.eval()
-
-    # Run the text through BERT, and collect all of the hidden states produced
-    # from all 12 layers.
-    with torch.no_grad():
-        outputs = model(utts_tensor, ids_tensor)
-
-        # with `output_hidden_states = True`, the third item will be the
-        # hidden states from all layers. See the documentation for more details:
-        # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
-        hidden_states = outputs[2]
-
-        # Concatenate the tensors for all layers. We use `stack` here to
-        # create a new dimension in the tensor.
-        token_embeddings = torch.stack(hidden_states, dim=0)
-        # Remove dimension 1, the "batches".
-        token_embeddings = torch.squeeze(token_embeddings, dim=1)
-        # Swap dimensions 0 and 1.
-        token_embeddings = token_embeddings.permute(1, 0, 2)
-
-        # get word embeddings
-        for emb_layer_mat in token_embeddings:
-            # todo: try out different versions of this for performance
-            # select penultimate hidden layer as embedding
-            token_emb = emb_layer_mat[-2]
-
-            # add this embedding to word counts and add to idx2emb
-            # todo asap: just add embeddings directly to data and pickle all together
-
-
-
-
-
