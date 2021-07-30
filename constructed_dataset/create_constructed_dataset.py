@@ -21,7 +21,7 @@ class ConstructedDataset:
             self.ys_idx = 4
 
     def unpickle(self, pickled):
-        with open(pickled, 'rb') as pfile:
+        with open(pickled, "rb") as pfile:
             unpickled = pickle.load(pfile)
 
         return unpickled
@@ -65,13 +65,16 @@ class ConstructedDataset:
         return data_subset
 
     def save_constructed_task(self, constructed_task, save_path, save_name):
-        pickle.dump(
-            constructed_task, open(f"{save_path}/{save_name}.pickle", "wb")
-        )
+        pickle.dump(constructed_task, open(f"{save_path}/{save_name}.pickle", "wb"))
 
 
-def get_multiple_constructed_datasets(list_of_datasets, list_of_task_nums, list_of_class_nums,
-                                      save_path, list_of_save_names=None):
+def get_multiple_constructed_datasets(
+    list_of_datasets,
+    list_of_task_nums,
+    list_of_class_nums,
+    save_path,
+    list_of_save_names=None,
+):
     """
     Get multiple constructed datasets
     Needed because train, dev, and test are separate pickle file path/names
@@ -92,7 +95,7 @@ def get_multiple_constructed_datasets(list_of_datasets, list_of_task_nums, list_
         cons_data = constructed.create_constructed_data(list_of_class_nums[i])
 
         if list_of_save_names is None:
-            the_name = dataset.split('/')[-1].split('.pickle')[0]
+            the_name = dataset.split("/")[-1].split(".pickle")[0]
             the_task = f"task{str(list_of_task_nums[i])}"
             the_classes = f"classes{'-'.join([str(n) for n in list_of_class_nums[i]])}"
             save_name = f"{the_name}_{the_task}_{the_classes}"
@@ -101,6 +104,7 @@ def get_multiple_constructed_datasets(list_of_datasets, list_of_task_nums, list_
 
         # save the data points for this task to pickle
         constructed.save_constructed_task(cons_data, save_path, save_name)
+
 
 # todo: one method that makes the constructed dataset, gets all the right datapoints and returns them (87-92)
 #       another that has the dataset lists, 1 by 1 calls the datasets through method 1 and returns

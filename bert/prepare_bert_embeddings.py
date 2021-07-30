@@ -7,14 +7,16 @@ from transformers import BertTokenizer, BertModel, DistilBertModel, DistilBertTo
 # Load pre-trained model tokenizer (vocabulary)
 
 
-class DistilBertEmb():
+class DistilBertEmb:
     def __init__(self):
-        self.tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased', do_lower_case=True)
+        self.tokenizer = DistilBertTokenizer.from_pretrained(
+            "distilbert-base-uncased", do_lower_case=True
+        )
 
         # Load pre-trained model (weights)
-        self.model = DistilBertModel.from_pretrained('distilbert-base-uncased',
-                                                     output_hidden_states=True,
-                                                     )
+        self.model = DistilBertModel.from_pretrained(
+            "distilbert-base-uncased", output_hidden_states=True,
+        )
         self.model.eval()
 
     def distilbert_tokenize(self, sent):
@@ -59,7 +61,7 @@ class DistilBertEmb():
             # hidden_state = outputs[2]
             # Concatenate the tensors for all layers. We use `stack` here to
             # create a new dimension in the tensor.
-            #token_embeddings = torch.stack(hidden_state, dim=0)
+            # token_embeddings = torch.stack(hidden_state, dim=0)
             # Remove dimension 1, the "batches".
             # token_embeddings = torch.squeeze(token_embeddings, dim=1)
             # Swap dimensions 0 and 1.
@@ -73,7 +75,6 @@ class DistilBertEmb():
             #     # add this embedding to word counts and add to idx2emb
             #     # todo asap: just add embeddings directly to data and pickle all together
             #     embeddings.append(token_emb)
-
 
             # output 0 is the output of the final layer of distilbert
             #   which seems to be what we want here. For bert, start with outputs[2]
