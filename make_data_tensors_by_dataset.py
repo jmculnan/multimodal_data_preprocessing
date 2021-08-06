@@ -54,7 +54,7 @@ def make_data_tensors_meld(text_data, used_utts_list, longest_utt, tokenizer, gl
             else:
                 # else use the distilbert tokenizer instead
                 utt, ids = emb_maker.distilbert_tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids))
+                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -129,7 +129,7 @@ def make_data_tensors_mustard(text_data, used_utts_list, longest_utt, tokenizer,
             else:
                 # else use the distilbert tokenizer instead
                 utt, ids = emb_maker.distilbert_tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids))
+                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -210,7 +210,7 @@ def make_data_tensors_chalearn(
             else:
                 # else use the distilbert tokenizer instead
                 utt, ids = emb_maker.distilbert_tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids))
+                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -300,7 +300,7 @@ def make_data_tensors_cdc(text_data, used_utts_list, longest_utt, tokenizer, glo
             else:
                 # else use the distilbert tokenizer instead
                 utt, ids = emb_maker.distilbert_tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids))
+                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -372,7 +372,7 @@ def make_data_tensors_mosi(text_data, used_utts_list, longest_utt, tokenizer, gl
             else:
                 # else use the distilbert tokenizer instead
                 utt, ids = emb_maker.distilbert_tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids))
+                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 

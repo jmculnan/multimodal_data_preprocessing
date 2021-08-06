@@ -2,6 +2,7 @@
 # adapted from https://mccormickml.com/2019/05/14/BERT-word-embeddings-tutorial/#1-loading-pre-trained-bert
 
 import torch
+from torch import nn
 from transformers import BertTokenizer, BertModel, DistilBertModel, DistilBertTokenizer
 
 # Load pre-trained model tokenizer (vocabulary)
@@ -37,7 +38,7 @@ class DistilBertEmb:
 
         return idx_tokens, ids
 
-    def get_embeddings(self, utt_tensor, id_tensor):
+    def get_embeddings(self, utt_tensor, id_tensor, longest_utt=None):
         """
         For a tensor of ALL utts from ALL datasets
         Get embeddings from penultimate layer of bert
@@ -89,5 +90,12 @@ class DistilBertEmb:
 
         embeddings = torch.stack(embeddings)
         embeddings = torch.squeeze(embeddings, dim=0)
+
+        # pad to make the correct length
+        # based on the difference between max_len and embeddings dim 0
+        if longest_utt:
+            # add zeros to the end of the first dimension
+            padding = (0, 0, 0, 0, 0, longest_utt - embeddings.shape[0])
+            embeddings = nn.functional.pad(embeddings, padding, "constant", 0)
 
         return embeddings

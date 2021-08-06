@@ -213,9 +213,10 @@ if __name__ == "__main__":
     transcription_type = "gold"
 
     # save_partitioned_data(
-    #     "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
+    #     "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+    #     data_as_dict=True
     # )
-
+    #
     # save_partitioned_data(
     #     "mosi",
     #     save_path,
@@ -224,29 +225,33 @@ if __name__ == "__main__":
     #     transcription_type,
     #     glove_path,
     #     pred_type="classification",
-    #     emb_type="distilbert"
+    #     emb_type="distilbert",
+    #     data_as_dict=True
     # )
 
-    # save_partitioned_data(
-    #     "firstimpr",
-    #     save_path,
-    #     firstimpr_path,
-    #     feature_set,
-    #     transcription_type,
-    #     glove_path,
-    #     pred_type="max_class",
-    #     emb_type="distilbert"
-    # )
+    save_partitioned_data(
+        "firstimpr",
+        save_path,
+        firstimpr_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        pred_type="max_class",
+        emb_type="distilbert",
+        data_as_dict=True
+    )
 
-    # save_partitioned_data(
-    #     "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
-    # )
-    #
+    save_partitioned_data(
+        "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+        data_as_dict=True
+    )
+
     save_partitioned_data(
         "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
         data_as_dict=True
     )
 
-    # save_partitioned_data(
-    #     "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert"
-    # )
+    save_partitioned_data(
+        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+        data_as_dict=True
+    )
