@@ -90,12 +90,13 @@ class DistilBertEmb:
 
         embeddings = torch.stack(embeddings)
         embeddings = torch.squeeze(embeddings, dim=0)
+        embeddings = torch.squeeze(embeddings, dim=1)
 
         # pad to make the correct length
         # based on the difference between max_len and embeddings dim 0
         if longest_utt:
             # add zeros to the end of the first dimension
-            padding = (0, 0, 0, 0, 0, longest_utt - embeddings.shape[0])
+            padding = (0, 0, 0, longest_utt - embeddings.shape[0])
             embeddings = nn.functional.pad(embeddings, padding, "constant", 0)
 
         return embeddings
