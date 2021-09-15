@@ -89,11 +89,13 @@ class StandardPrep:
         # set tokenizer
         if glove is None:
             self.tokenizer = get_distilbert_tokenizer()
+            self.use_distilbert = True
         else:
             self.tokenizer = get_tokenizer("basic_english")
+            self.use_distilbert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(all_data, self.tokenizer)
+        self.longest_utt = get_longest_utt(all_data, self.tokenizer, self.use_distilbert)
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -195,10 +197,15 @@ class SelfSplitPrep:
             speaker2idx = None
 
         # set tokenizer
-        self.tokenizer = get_tokenizer("basic_english")
+        if glove is None:
+            self.tokenizer = get_distilbert_tokenizer()
+            self.use_distilbert=True
+        else:
+            self.tokenizer = get_tokenizer("basic_english")
+            self.use_distilbert=False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer)
+        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_distilbert)
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -259,7 +266,7 @@ class DataPrep:
         longest_acoustic,
         glove=None,
         partition="train",
-        add_avging=True,
+        add_avging=False,
     ):
         # set data type
         self.d_type = data_type
@@ -501,17 +508,22 @@ class DataPrep:
         return data_tensor_dict
 
 
-def get_longest_utt(data, tokenizer):
+def get_longest_utt(data, tokenizer, use_distilbert=False):
     """
     Get the length of longest utterance in the dataset
     :param data: a pandas df containing all utterances
     :param tokenizer: a tokenizer
+    :param use_distilbert: whether to use distilbert tokenizer
     :return: length of longest utterance
     """
     all_utts = data["utterance"].tolist()
 
-    # tokenize, clean up, and count all items in dataset
-    item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]
+    if use_distilbert:
+        # tokenize and count all items in dataset
+        item_lens = [len(tokenizer.tokenize("[CLS] " + str(utt) + " [SEP]")) for utt in all_utts]
+    else:
+        # tokenize, clean up, and count all items in dataset
+        item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]
 
     # return longest
     return max(item_lens)
@@ -586,6 +598,14 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     print(f"Acoustic dict made at {datetime.datetime.now()}")
     print(f"Len of dict: {len(acoustic_dict.keys())}")
     return acoustic_dict, acoustic_lengths
+
+
+def get_distilbert_tokenizer():
+    # instantiate distilbert emb object
+    distilbert_emb_mkr = DistilBertEmb()
+
+    # return tokenizer
+    return distilbert_emb_mkr.tokenizer
 
 
 # todo: delete this after done testing

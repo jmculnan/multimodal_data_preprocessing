@@ -137,15 +137,15 @@ def make_ravdess_data_tensors(
     if glove is not None:
         utt_1 = glove.index(["kids", "are", "talking", "by", "the", "door"])
         utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
+        utt_length = 6
     else:
         # instantiate embeddings maker
         emb_maker = DistilBertEmb()
         utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
-        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1))
-        print(utt_1.size())
+        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
         utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
-        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2))
-        print(utt_2.size())
+        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+        utt_length = max(len(utt_1), len(utt_2))
 
     # will have to do two for loops
     # one to get the longest acoustic df
@@ -241,7 +241,7 @@ def make_ravdess_data_tensors(
                     "ys": [intensities[i].clone().detach(),
                            emotions[i].clone().detach()],
                     "repetition": repetitions[i].clone().detach(),
-                    "utt_length": 6,
+                    "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
                 }
             )
