@@ -266,7 +266,7 @@ class DataPrep:
         longest_acoustic,
         glove=None,
         partition="train",
-        add_avging=True,
+        add_avging=False,
     ):
         # set data type
         self.d_type = data_type

@@ -9,11 +9,16 @@ random.seed(88)
 
 
 class ConstructedDataset:
-    def __init__(self, pickled_dataset):
+    def __init__(self, dataset, name=None):
         """
-        :param pickled_dataset: path to a pickled data file
+        :param dataset: either a path to a pickled data file or an unpickled dataset
         """
-        self.dataset = self.unpickle(pickled_dataset)
+        if type(dataset) == str:
+            self.data_name = dataset
+            self.dataset = self.unpickle(dataset)
+        else:
+            self.dataset = dataset
+            self.data_name = name
         self.data_is_dict = True if type(self.dataset[0]) == dict else False
 
         if self.data_is_dict:
@@ -74,6 +79,7 @@ def make_constructed_dataset(
     dataset,
     task_num,
     list_of_class_nums,
+    data_name=None
 ):
     """
     Make a constructed dataset
@@ -83,21 +89,22 @@ def make_constructed_dataset(
     :return: a list of lists for all relevant datapoints in the dataset
     """
     # get task
-    constructed = ConstructedDataset(dataset)
+    constructed = ConstructedDataset(dataset, data_name)
     constructed.change_task(task_num)
 
     # construct the dataset subset
     cons_data = constructed.create_constructed_data(list_of_class_nums)
 
-    return cons_data
+    return cons_data, constructed.data_name
 
 
 def make_multiple_constructed_datasets(
     list_of_datasets,
     list_of_task_nums,
     nested_list_of_class_nums,
-    save_path,
+    save_path=None,
     list_of_save_names=None,
+    data_name=None
 ):
     """
     Get multiple constructed datasets
@@ -107,24 +114,37 @@ def make_multiple_constructed_datasets(
         in the same order as list of datasets
     :param nested_list_of_class_nums: a list of lists of class nums
         in the same order as list of datasets
-    :param save_path: path to dir where pickle files will be saved
+    :param save_path: path to dir where pickle files will be saved; if None,
+        this function returns data
     :param list_of_save_names: list of names to save datasets as
         if None, names are taken from the dataset names + task + class nums
-    :return:
+    :return: dict of save_name: data if no save_path is provided
     """
+    datasets = {}
+
     for i, dataset in enumerate(list_of_datasets):
-        data_points = make_constructed_dataset(dataset, list_of_task_nums[i], nested_list_of_class_nums[i])
+        data_points, data_name = make_constructed_dataset(dataset, list_of_task_nums[i],
+                                                          nested_list_of_class_nums[i], data_name)
 
         if list_of_save_names is None:
-            the_name = dataset.split("/")[-1].split(".pickle")[0]
+            if data_name.endswith(".pickle"):
+                the_name = data_name.split("/")[-1].split(".pickle")[0]
+            else:
+                the_name = data_name
             the_task = f"task{str(list_of_task_nums[i])}"
             the_classes = f"classes{'-'.join([str(n) for n in nested_list_of_class_nums[i]])}"
             save_name = f"{the_name}_{the_task}_{the_classes}"
         else:
             save_name = list_of_save_names[i]
 
-        # save the data points for this task to pickle
-        pickle.dump(data_points, open(f"{save_path}/{save_name}.pickle", "wb"))
+        if save_path is not None:
+            # save the data points for this task to pickle
+            pickle.dump(data_points, open(f"{save_path}/{save_name}.pickle", "wb"))
+        else:
+            datasets[save_name] = data_points
+
+    if save_path is None:
+        return datasets
 
 
 def make_single_constructed_set_from_multiple_datasets(
@@ -146,6 +166,7 @@ def make_single_constructed_set_from_multiple_datasets(
     :param save_name: names to save dataset as
         if None, name is taken from the dataset names + task + class nums
     :return:
+    TODO: currently only accepts input paths and not unpickled datasets
     """
     # holder for all data
     all_data = []

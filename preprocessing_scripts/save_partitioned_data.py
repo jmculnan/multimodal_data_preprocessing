@@ -115,7 +115,7 @@ def prep_data(
 
     if dataset == "cdc":
         train, dev, test, weights = prep_cdc_data(
-            data_path, feature_set, transcription_type, "distilbert",  glove_path, feats_to_use,
+            data_path, feature_set, transcription_type, "distilbert", glove_path, feats_to_use,
             as_dict=data_as_dict
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
@@ -212,22 +212,22 @@ if __name__ == "__main__":
 
     transcription_type = "gold"
 
-    save_partitioned_data(
-        "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True
-    )
-
-    save_partitioned_data(
-        "mosi",
-        save_path,
-        mosi_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        pred_type="classification",
-        emb_type="distilbert",
-        data_as_dict=True
-    )
+    # save_partitioned_data(
+    #     "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+    #     data_as_dict=True
+    # )
+    #
+    # save_partitioned_data(
+    #     "mosi",
+    #     save_path,
+    #     mosi_path,
+    #     feature_set,
+    #     transcription_type,
+    #     glove_path,
+    #     pred_type="classification",
+    #     emb_type="distilbert",
+    #     data_as_dict=True
+    # )
 
     save_partitioned_data(
         "firstimpr",
@@ -237,21 +237,21 @@ if __name__ == "__main__":
         transcription_type,
         glove_path,
         pred_type="max_class",
-        emb_type="distilbert",
-        data_as_dict=True
+        emb_type="glove",
+        data_as_dict=False
     )
 
     save_partitioned_data(
-        "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True
+        "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="glove",
+        data_as_dict=False
     )
 
-    save_partitioned_data(
-        "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True
-    )
-
-    save_partitioned_data(
-        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True
-    )
+    # save_partitioned_data(
+    #     "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+    #     data_as_dict=True
+    # )
+    #
+    # save_partitioned_data(
+    #     "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
+    #     data_as_dict=True
+    # )
