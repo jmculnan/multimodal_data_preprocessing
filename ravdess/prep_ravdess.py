@@ -25,7 +25,8 @@ def prep_ravdess_data(
     embedding_type="distilbert",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
-    as_dict=False
+    as_dict=False,
+    avg_acoustic_data=False
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -43,7 +44,8 @@ def prep_ravdess_data(
         test_prop=0.2,
         f_end=f"{feature_set}.csv",
         use_cols=features_to_use,
-        as_dict=as_dict
+        as_dict=as_dict,
+        avg_acoustic_data=avg_acoustic_data
     )
 
     train_data = ravdess_prep.train_data
@@ -71,8 +73,8 @@ class RavdessPrep:
         test_prop=0.2,
         f_end="IS10.csv",
         use_cols=None,
-        add_avging=True,
-        as_dict=False
+        as_dict=False,
+        avg_acoustic_data=False
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -85,7 +87,7 @@ class RavdessPrep:
 
         # get data tensors
         self.all_data = make_ravdess_data_tensors(
-            self.feature_path, glove, f_end, use_cols, add_avging=add_avging,
+            self.feature_path, glove, f_end, use_cols, add_avging=avg_acoustic_data,
             as_dict=as_dict
         )
 

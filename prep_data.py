@@ -54,6 +54,7 @@ class StandardPrep:
         glove=None,
         transcription_type="gold",
         use_cols=None,
+        avg_acoustic_data=False
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -112,6 +113,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "train",
+            add_avging=avg_acoustic_data
         )
 
         self.dev_prep = DataPrep(
@@ -163,7 +165,8 @@ class SelfSplitPrep:
         train_prop=0.6,
         test_prop=0.2,
         pred_type=None,
-        as_dict=False
+        as_dict=False,
+        avg_acoustic_data=False
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -222,6 +225,7 @@ class SelfSplitPrep:
             self.longest_acoustic,
             glove,
             "train",
+            add_avging=avg_acoustic_data
         )
 
         # add pred type if needed (currently just mosi)

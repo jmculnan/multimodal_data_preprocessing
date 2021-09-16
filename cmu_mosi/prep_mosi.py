@@ -15,7 +15,8 @@ def prep_mosi_data(
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     pred_type="classification",
-    as_dict=False
+    as_dict=False,
+    avg_acoustic_data=False
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -36,7 +37,8 @@ def prep_mosi_data(
         glove=glove,
         use_cols=features_to_use,
         pred_type=pred_type,
-        as_dict=as_dict
+        as_dict=as_dict,
+        avg_acoustic_data=avg_acoustic_data
     )
 
     # get train, dev, test data

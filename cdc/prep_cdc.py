@@ -20,7 +20,8 @@ def prep_cdc_data(
     embedding_type="distilbert",
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
-    as_dict=False
+    as_dict=False,
+    avg_acoustic_data=False
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -40,7 +41,8 @@ def prep_cdc_data(
         utterance_fname=utts_name,
         glove=glove,
         use_cols=features_to_use,
-        as_dict=as_dict
+        as_dict=as_dict,
+        avg_acoustic_data=avg_acoustic_data
     )
 
     # get train, dev, test data

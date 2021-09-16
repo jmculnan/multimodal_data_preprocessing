@@ -10,7 +10,8 @@ def prep_firstimpr_data(
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     pred_type="max_class",
-    as_dict=False
+    as_dict=False,
+    avg_acoustic_data=False
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -34,6 +35,7 @@ def prep_firstimpr_data(
         glove=glove,
         transcription_type=transcription_type,
         use_cols=features_to_use,
+        avg_acoustic_data=avg_acoustic_data
     )
 
     # add the prediction type, since first impressions can have several
