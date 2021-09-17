@@ -127,6 +127,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "dev",
+            add_avging=avg_acoustic_data
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -143,6 +144,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "test",
+            add_avging=avg_acoustic_data
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
