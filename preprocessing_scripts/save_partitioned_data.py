@@ -24,7 +24,7 @@ def save_partitioned_data(
     pred_type=None,
     zip=False,
     data_as_dict=False,
-    avg_acoustic_data=False
+    avg_acoustic_data=False,
 ):
     """
     Save partitioned data in pickled format
@@ -56,7 +56,7 @@ def save_partitioned_data(
         feats_to_use,
         pred_type,
         data_as_dict,
-        avg_acoustic_data
+        avg_acoustic_data,
     )
 
     if data_as_dict:
@@ -67,31 +67,58 @@ def save_partitioned_data(
     if zip:
         pickle.dump(
             train_ds,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.bz2", "wb"),
+            bz2.BZ2File(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.bz2",
+                "wb",
+            ),
         )
         pickle.dump(
-            dev_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.bz2", "wb")
+            dev_ds,
+            bz2.BZ2File(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.bz2", "wb"
+            ),
         )
         pickle.dump(
-            test_ds, bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.bz2", "wb")
+            test_ds,
+            bz2.BZ2File(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.bz2", "wb"
+            ),
         )
         pickle.dump(
             clss_weights,
-            bz2.BZ2File(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.bz2", "wb"),
+            bz2.BZ2File(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.bz2",
+                "wb",
+            ),
         )
     else:
         pickle.dump(
-            train_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.pickle", "wb")
+            train_ds,
+            open(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.pickle",
+                "wb",
+            ),
         )
         pickle.dump(
-            dev_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.pickle", "wb")
+            dev_ds,
+            open(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.pickle",
+                "wb",
+            ),
         )
         pickle.dump(
-            test_ds, open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.pickle", "wb")
+            test_ds,
+            open(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.pickle",
+                "wb",
+            ),
         )
         pickle.dump(
             clss_weights,
-            open(f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.pickle", "wb"),
+            open(
+                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.pickle",
+                "wb",
+            ),
         )
 
 
@@ -105,7 +132,7 @@ def prep_data(
     feats_to_use,
     pred_type=None,
     data_as_dict=False,
-    avg_acoustic_data=False
+    avg_acoustic_data=False,
 ):
     """
     Prepare data for a given dataset
@@ -120,8 +147,14 @@ def prep_data(
 
     if dataset == "cdc":
         train, dev, test, weights = prep_cdc_data(
-            data_path, feature_set, transcription_type, emb_type, glove_path, feats_to_use,
-            as_dict=data_as_dict, avg_acoustic_data=avg_acoustic_data
+            data_path,
+            feature_set,
+            transcription_type,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
         train, dev, test, weights = prep_mosi_data(
@@ -149,18 +182,35 @@ def prep_data(
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
-            data_path, feature_set, transcription_type, emb_type, glove_path, feats_to_use,
-            as_dict=data_as_dict, avg_acoustic_data=avg_acoustic_data
+            data_path,
+            feature_set,
+            transcription_type,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
-            data_path, feature_set, transcription_type, emb_type, glove_path, feats_to_use,
-            as_dict=data_as_dict, avg_acoustic_data=avg_acoustic_data
+            data_path,
+            feature_set,
+            transcription_type,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
-            data_path, feature_set, emb_type, glove_path, feats_to_use,
-            as_dict=data_as_dict, avg_acoustic_data=avg_acoustic_data
+            data_path,
+            feature_set,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
         )
 
     return train, dev, test, weights
@@ -220,8 +270,15 @@ if __name__ == "__main__":
     transcription_type = "gold"
 
     save_partitioned_data(
-        "cdc", save_path, cdc_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True, avg_acoustic_data=True
+        "cdc",
+        save_path,
+        cdc_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        emb_type="distilbert",
+        data_as_dict=True,
+        avg_acoustic_data=True,
     )
 
     save_partitioned_data(
@@ -234,7 +291,7 @@ if __name__ == "__main__":
         pred_type="classification",
         emb_type="distilbert",
         data_as_dict=True,
-        avg_acoustic_data=True
+        avg_acoustic_data=True,
     )
 
     save_partitioned_data(
@@ -247,20 +304,41 @@ if __name__ == "__main__":
         pred_type="max_class",
         emb_type="glove",
         data_as_dict=True,
-        avg_acoustic_data=True
+        avg_acoustic_data=True,
     )
 
     save_partitioned_data(
-        "meld", save_path, meld_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True, avg_acoustic_data=True
+        "meld",
+        save_path,
+        meld_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        emb_type="distilbert",
+        data_as_dict=True,
+        avg_acoustic_data=True,
     )
 
     save_partitioned_data(
-        "mustard", save_path, mustard_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True, avg_acoustic_data=True
+        "mustard",
+        save_path,
+        mustard_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        emb_type="distilbert",
+        data_as_dict=True,
+        avg_acoustic_data=True,
     )
 
     save_partitioned_data(
-        "ravdess", save_path, ravdess_path, feature_set, transcription_type, glove_path, emb_type="distilbert",
-        data_as_dict=True, avg_acoustic_data=True
+        "ravdess",
+        save_path,
+        ravdess_path,
+        feature_set,
+        transcription_type,
+        glove_path,
+        emb_type="distilbert",
+        data_as_dict=True,
+        avg_acoustic_data=True,
     )

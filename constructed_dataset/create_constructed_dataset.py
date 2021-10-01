@@ -75,12 +75,7 @@ class ConstructedDataset:
         pickle.dump(constructed_task, open(f"{save_path}/{save_name}.pickle", "wb"))
 
 
-def make_constructed_dataset(
-    dataset,
-    task_num,
-    list_of_class_nums,
-    data_name=None
-):
+def make_constructed_dataset(dataset, task_num, list_of_class_nums, data_name=None):
     """
     Make a constructed dataset
     :param dataset: the full dataset path
@@ -104,7 +99,7 @@ def make_multiple_constructed_datasets(
     nested_list_of_class_nums,
     save_path=None,
     list_of_save_names=None,
-    data_name=None
+    data_name=None,
 ):
     """
     Get multiple constructed datasets
@@ -123,8 +118,9 @@ def make_multiple_constructed_datasets(
     datasets = {}
 
     for i, dataset in enumerate(list_of_datasets):
-        data_points, data_name = make_constructed_dataset(dataset, list_of_task_nums[i],
-                                                          nested_list_of_class_nums[i], data_name)
+        data_points, data_name = make_constructed_dataset(
+            dataset, list_of_task_nums[i], nested_list_of_class_nums[i], data_name
+        )
 
         if list_of_save_names is None:
             if data_name.endswith(".pickle"):
@@ -132,7 +128,9 @@ def make_multiple_constructed_datasets(
             else:
                 the_name = data_name
             the_task = f"task{str(list_of_task_nums[i])}"
-            the_classes = f"classes{'-'.join([str(n) for n in nested_list_of_class_nums[i]])}"
+            the_classes = (
+                f"classes{'-'.join([str(n) for n in nested_list_of_class_nums[i]])}"
+            )
             save_name = f"{the_name}_{the_task}_{the_classes}"
         else:
             save_name = list_of_save_names[i]
@@ -148,11 +146,11 @@ def make_multiple_constructed_datasets(
 
 
 def make_single_constructed_set_from_multiple_datasets(
-        list_of_datasets,
-        list_of_task_nums,
-        nested_list_of_class_nums,
-        save_path,
-        save_name=None,
+    list_of_datasets,
+    list_of_task_nums,
+    nested_list_of_class_nums,
+    save_path,
+    save_name=None,
 ):
     """
     Take multiple datasets and combine relevant subsets of each into a single
@@ -188,13 +186,18 @@ def make_single_constructed_set_from_multiple_datasets(
             all_dataset_save_info.append(f"{the_name}-t{the_task}-c{the_classes}")
 
         # get relevant data
-        data_points = make_constructed_dataset(dataset, list_of_task_nums[i], nested_list_of_class_nums[i])
+        data_points = make_constructed_dataset(
+            dataset, list_of_task_nums[i], nested_list_of_class_nums[i]
+        )
 
         # change class numbers for ys data
         for point in data_points:
 
             # add original task + class num to separate key in dict
-            point["original_task_and_class"] = (list_of_task_nums[i], point["ys"][list_of_task_nums[i]])
+            point["original_task_and_class"] = (
+                list_of_task_nums[i],
+                point["ys"][list_of_task_nums[i]],
+            )
 
             # assumes data point is in dict format
             point["ys"][list_of_task_nums[i]] += total_classes

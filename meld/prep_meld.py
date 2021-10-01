@@ -13,7 +13,7 @@ def prep_meld_data(
     glove_filepath="../asist-speech/data/glove.short.300d.punct.txt",
     features_to_use=None,
     as_dict=False,
-    avg_acoustic_data=False
+    avg_acoustic_data=False,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -37,7 +37,7 @@ def prep_meld_data(
         glove=glove,
         transcription_type=transcription_type,
         use_cols=features_to_use,
-        avg_acoustic_data=avg_acoustic_data
+        avg_acoustic_data=avg_acoustic_data,
     )
 
     print("Now preparing training data")

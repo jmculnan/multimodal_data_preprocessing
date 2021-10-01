@@ -493,10 +493,17 @@ def look_up_num_classes(dataset_name):
     """
     # todo: need to fix this to be name of classes instead of number
     #   because of 2 sets of emotion tags
-    all_datasets = {"cdc": 2, "mosi_ternary": 3,
-                    "mosi_all": 7, "firstimpr_binary": 2,
-                    "firstimpr_ternary": 3, "firstimpr_maxclass": 5,
-                    "meld": [7, 3], "mustard": 2, "ravdess": [8, 2]}
+    all_datasets = {
+        "cdc": 2,
+        "mosi_ternary": 3,
+        "mosi_all": 7,
+        "firstimpr_binary": 2,
+        "firstimpr_ternary": 3,
+        "firstimpr_maxclass": 5,
+        "meld": [7, 3],
+        "mustard": 2,
+        "ravdess": [8, 2],
+    }
 
     return all_datasets[dataset_name]
 
