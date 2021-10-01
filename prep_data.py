@@ -54,6 +54,7 @@ class StandardPrep:
         glove=None,
         transcription_type="gold",
         use_cols=None,
+        avg_acoustic_data=False,
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -95,7 +96,9 @@ class StandardPrep:
             self.use_distilbert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(all_data, self.tokenizer, self.use_distilbert)
+        self.longest_utt = get_longest_utt(
+            all_data, self.tokenizer, self.use_distilbert
+        )
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -112,6 +115,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "train",
+            add_avging=avg_acoustic_data,
         )
 
         self.dev_prep = DataPrep(
@@ -125,6 +129,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "dev",
+            add_avging=avg_acoustic_data,
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -141,6 +146,7 @@ class StandardPrep:
             self.longest_acoustic,
             glove,
             "test",
+            add_avging=avg_acoustic_data,
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -163,7 +169,8 @@ class SelfSplitPrep:
         train_prop=0.6,
         test_prop=0.2,
         pred_type=None,
-        as_dict=False
+        as_dict=False,
+        avg_acoustic_data=False,
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -199,13 +206,15 @@ class SelfSplitPrep:
         # set tokenizer
         if glove is None:
             self.tokenizer = get_distilbert_tokenizer()
-            self.use_distilbert=True
+            self.use_distilbert = True
         else:
             self.tokenizer = get_tokenizer("basic_english")
-            self.use_distilbert=False
+            self.use_distilbert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_distilbert)
+        self.longest_utt = get_longest_utt(
+            self.all_data, self.tokenizer, self.use_distilbert
+        )
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -222,6 +231,7 @@ class SelfSplitPrep:
             self.longest_acoustic,
             glove,
             "train",
+            add_avging=avg_acoustic_data,
         )
 
         # add pred type if needed (currently just mosi)
@@ -337,7 +347,7 @@ class DataPrep:
                 self.acoustic_lengths,
                 self.acoustic_means,
                 self.acoustic_stdev,
-                as_dict=as_dict
+                as_dict=as_dict,
             )
         elif self.d_type == "mustard":
             combined = combine_xs_and_ys_mustard(
@@ -347,7 +357,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
-                as_dict=as_dict
+                as_dict=as_dict,
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             combined = combine_xs_and_ys_chalearn(
@@ -357,7 +367,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 pred_type=self.pred_type,
-                as_dict=as_dict
+                as_dict=as_dict,
             )
         elif self.d_type == "cdc":
             combined = combine_xs_and_ys_cdc(
@@ -367,7 +377,7 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
-                as_dict=as_dict
+                as_dict=as_dict,
             )
         elif (
             self.d_type == "mosi"
@@ -382,7 +392,7 @@ class DataPrep:
                 self.acoustic_stdev,
                 speaker2idx,
                 pred_type=self.pred_type,
-                as_dict=as_dict
+                as_dict=as_dict,
             )
 
         return combined
@@ -520,7 +530,9 @@ def get_longest_utt(data, tokenizer, use_distilbert=False):
 
     if use_distilbert:
         # tokenize and count all items in dataset
-        item_lens = [len(tokenizer.tokenize("[CLS] " + str(utt) + " [SEP]")) for utt in all_utts]
+        item_lens = [
+            len(tokenizer.tokenize("[CLS] " + str(utt) + " [SEP]")) for utt in all_utts
+        ]
     else:
         # tokenize, clean up, and count all items in dataset
         item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]

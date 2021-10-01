@@ -4,8 +4,12 @@ from utils.data_prep_helpers import transform_acoustic_item
 
 
 def combine_xs_and_ys_meld(
-    data_dict, acoustic_data, acoustic_lengths, acoustic_means, acoustic_stdev,
-    as_dict=False
+    data_dict,
+    acoustic_data,
+    acoustic_lengths,
+    acoustic_means,
+    acoustic_stdev,
+    as_dict=False,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -13,24 +17,29 @@ def combine_xs_and_ys_meld(
     data = []
     if as_dict:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
                     "x_utt": data_dict["all_utts"][i].clone().detach(),
                     "x_speaker": data_dict["all_speakers"][i].clone().detach(),
                     "x_gender": 0,
-                    "ys": [data_dict["all_emotions"][i].clone().detach(),
-                           data_dict["all_sentiments"][i].clone().detach()],
+                    "ys": [
+                        data_dict["all_emotions"][i].clone().detach(),
+                        data_dict["all_sentiments"][i].clone().detach(),
+                    ],
                     "audio_id": data_dict["all_audio_ids"][i],
                     "utt_length": data_dict["utt_lengths"][i],
-                    "acoustic_length": acoustic_lengths[i]
-
+                    "acoustic_length": acoustic_lengths[i],
                 }
             )
     else:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed.clone().detach(),
@@ -55,7 +64,7 @@ def combine_xs_and_ys_mustard(
     acoustic_means,
     acoustic_stdev,
     speaker2idx,
-    as_dict=False
+    as_dict=False,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -64,7 +73,9 @@ def combine_xs_and_ys_mustard(
 
     if as_dict:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
@@ -79,7 +90,9 @@ def combine_xs_and_ys_mustard(
             )
     else:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed.clone().detach(),
@@ -103,7 +116,7 @@ def combine_xs_and_ys_chalearn(
     acoustic_means,
     acoustic_stdev,
     pred_type,
-    as_dict=False
+    as_dict=False,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -112,7 +125,9 @@ def combine_xs_and_ys_chalearn(
 
     if as_dict:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             if pred_type is not "max_class":
                 data.append(
                     {
@@ -121,12 +136,14 @@ def combine_xs_and_ys_chalearn(
                         "x_speaker": 0,  # todo: eventually add speaker ?
                         "x_gender": data_dict["all_genders"][i].clone().detach(),
                         "x_ethnicity": data_dict["all_ethnicities"][i].clone().detach(),
-                        "ys": [data_dict["all_extraversion"][i].clone().detach(),
-                               data_dict["all_neuroticism"][i].clone().detach(),
-                               data_dict["all_agreeableness"][i].clone().detach(),
-                               data_dict["all_openness"][i].clone().detach(),
-                               data_dict["all_conscientiousness"][i].clone().detach(),
-                               data_dict["all_interview"][i].clone().detach()],
+                        "ys": [
+                            data_dict["all_extraversion"][i].clone().detach(),
+                            data_dict["all_neuroticism"][i].clone().detach(),
+                            data_dict["all_agreeableness"][i].clone().detach(),
+                            data_dict["all_openness"][i].clone().detach(),
+                            data_dict["all_conscientiousness"][i].clone().detach(),
+                            data_dict["all_interview"][i].clone().detach(),
+                        ],
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
@@ -157,7 +174,9 @@ def combine_xs_and_ys_chalearn(
 
     else:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             if pred_type is not "max_class":
                 data.append(
                     (
@@ -210,7 +229,7 @@ def combine_xs_and_ys_cdc(
     acoustic_means,
     acoustic_stdev,
     speaker2idx,
-    as_dict=False
+    as_dict=False,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -219,7 +238,9 @@ def combine_xs_and_ys_cdc(
 
     if as_dict:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
@@ -235,7 +256,9 @@ def combine_xs_and_ys_cdc(
 
     else:
         for i, item in enumerate(acoustic_data):
-            item_transformed = transform_acoustic_item(item, acoustic_means, acoustic_stdev)
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
             data.append(
                 (
                     item_transformed.clone().detach(),
@@ -260,7 +283,7 @@ def combine_xs_and_ys_mosi(
     acoustic_stdev,
     speaker2idx,
     pred_type,
-    as_dict=False
+    as_dict=False,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -299,7 +322,11 @@ def combine_xs_and_ys_mosi(
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
                         "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                         "x_gender": 0,  # todo: add gender later?
-                        "ys": [torch.tensor(sent2score[round(data_dict["all_sentiments"][i].item())])],
+                        "ys": [
+                            torch.tensor(
+                                sent2score[round(data_dict["all_sentiments"][i].item())]
+                            )
+                        ],
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
@@ -362,7 +389,9 @@ def combine_xs_and_ys_mosi(
                         data_dict["all_utts"][i].clone().detach(),
                         speaker2idx[data_dict["all_speakers"][i]],
                         0,  # todo: add gender later?
-                        torch.tensor(sent2score[round(data_dict["all_sentiments"][i].item())]),
+                        torch.tensor(
+                            sent2score[round(data_dict["all_sentiments"][i].item())]
+                        ),
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
