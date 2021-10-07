@@ -259,6 +259,7 @@ def make_ravdess_data_tensors(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
+                    "audio_id": f"{speakers[i]}_{emotions[i]}_{intensities[i]}_{repetitions[i]}"
                 }
             )
     else:
