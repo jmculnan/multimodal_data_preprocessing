@@ -55,6 +55,7 @@ class StandardPrep:
         transcription_type="gold",
         use_cols=None,
         avg_acoustic_data=False,
+        custom_feats_file=None
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -116,6 +117,7 @@ class StandardPrep:
             glove,
             "train",
             add_avging=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
 
         self.dev_prep = DataPrep(
@@ -130,6 +132,7 @@ class StandardPrep:
             glove,
             "dev",
             add_avging=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -147,6 +150,7 @@ class StandardPrep:
             glove,
             "test",
             add_avging=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -171,6 +175,7 @@ class SelfSplitPrep:
         pred_type=None,
         as_dict=False,
         avg_acoustic_data=False,
+        custom_feats_file=None
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -232,6 +237,7 @@ class SelfSplitPrep:
             glove,
             "train",
             add_avging=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
 
         # add pred type if needed (currently just mosi)
@@ -277,6 +283,7 @@ class DataPrep:
         glove=None,
         partition="train",
         add_avging=False,
+        custom_feats_file=None
     ):
         # set data type
         self.d_type = data_type
@@ -285,9 +292,14 @@ class DataPrep:
         self.tokenizer = tokenizer
 
         # get acoustic dict and lengths
-        self.acoustic_dict, self.acoustic_lengths_dict = make_acoustic_dict(
-            data_path, data_type, feature_set, acoustic_cols_used
-        )
+        if custom_feats_file is None:
+            self.acoustic_dict, self.acoustic_lengths_dict = make_acoustic_dict(
+                data_path, data_type, feature_set, acoustic_cols_used
+            )
+        else:
+            self.acoustic_dict, self.acoustic_lengths_dict = make_acoustic_dict_with_custom_features(
+                data_path, custom_feats_file, data_type, acoustic_cols_used
+            )
 
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
@@ -453,6 +465,10 @@ class DataPrep:
             acoustic_data = acoustic_dict[item]
             ordered_acoustic_lengths.append(acoustic_lengths_dict[item])
 
+            # if acoustic_data.shape[0] == 1:
+            #     acoustic_holder = torch.tensor(acoustic_data.iloc[0])
+            #     print(acoustic_holder)
+            #     exit()
             if not add_avging:
                 acoustic_data = acoustic_data[acoustic_data.index <= longest_acoustic]
                 acoustic_holder = torch.tensor(acoustic_data.values)
@@ -612,20 +628,59 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     return acoustic_dict, acoustic_lengths
 
 
+def make_acoustic_dict_with_custom_features(file_path, feats_file_name, dataset, use_cols=None):
+    """
+    Make the acoustic dict when non-openSMILE features are used
+    :param file_path: the path to the file containing all features for this dataset
+    :param feats_file_name: the name of the file containing acoustic features
+    :param dataset: the name of the dataset
+    :param use_cols: a list of columns to select, or None to get all columns
+    :return: an acoustic dict and the acoustic lengths (all 1s)
+    """
+    print(f"Starting (custom) acoustic dict at {datetime.datetime.now()}")
+
+    # get the acoustic features file
+    feats_file = f"{file_path}/{feats_file_name}"
+
+    if use_cols is None or (
+        len(use_cols) == 1
+        and (use_cols[0].lower() == "none" or use_cols.lower() == "all")
+    ):
+        feats = pd.read_csv(feats_file, sep=",")
+    else:
+        feats = pd.read_csv(feats_file, usecols=use_cols, sep=",")
+
+    # change name of audio id if using meld
+    if dataset == "meld":
+        feats['file_name'] = feats['file_name'].apply(lambda x: (x.split("_")[0], x.split("_")[1]))
+    elif dataset == "cdc":
+        feats['file_name'] = feats['file_name'].apply(lambda x: x.split("_")[1])
+    elif dataset == "firstimpr":
+        # custom dataset converted . to _ between fname and clip num
+        feats['file_name'] = feats['file_name'].apply(lambda x: ".00".join(x.split("_00")))
+
+    # set ID as index
+    feats = feats.set_index("file_name")
+
+    # replace all --undefined-- with 0.0
+    feats.replace("--undefined--", 0.0, inplace=True)
+
+    # transpose and convert to dict
+    acoustic_dict = feats.T.to_dict("list")
+
+    # convert each value to a DataFrame
+    acoustic_dict = {key: pd.DataFrame(value).T.astype(float) for key, value in acoustic_dict.items()}
+
+    # create parallel dict for acoustic lengths
+    acoustic_lengths = {key: 1 for key in acoustic_dict.keys()}
+
+    # return
+    return acoustic_dict, acoustic_lengths
+
+
 def get_distilbert_tokenizer():
     # instantiate distilbert emb object
     distilbert_emb_mkr = DistilBertEmb()
 
     # return tokenizer
     return distilbert_emb_mkr.tokenizer
-
-
-# todo: delete this after done testing
-#   this repo should have no 'main' functions
-if __name__ == "__main__":
-    chalearn = DataPrep(
-        "chalearn",
-        "../../datasets/multimodal_datasets/Chalearn",
-        "IS10",
-        "gold_and_utts.tsv",
-    )

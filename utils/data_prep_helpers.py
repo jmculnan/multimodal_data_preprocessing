@@ -15,6 +15,9 @@ from transformers import BertTokenizer, BertModel
 
 import statistics
 
+random.seed(345)
+
+
 
 class DatumListDataset(Dataset):
     """
