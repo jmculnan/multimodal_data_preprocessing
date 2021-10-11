@@ -44,7 +44,8 @@ def prep_cdc_data(
         use_cols=features_to_use,
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
-        custom_feats_file=custom_feats_file
+        custom_feats_file=custom_feats_file,
+        bert_type=embedding_type
     )
 
     # get train, dev, test data

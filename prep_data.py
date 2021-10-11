@@ -55,7 +55,8 @@ class StandardPrep:
         transcription_type="gold",
         use_cols=None,
         avg_acoustic_data=False,
-        custom_feats_file=None
+        custom_feats_file=None,
+        bert_type="distilbert"
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -90,15 +91,18 @@ class StandardPrep:
 
         # set tokenizer
         if glove is None:
-            self.tokenizer = get_distilbert_tokenizer()
-            self.use_distilbert = True
+            if bert_type.lower() == "bert":
+                self.tokenizer = get_bert_tokenizer()
+            else:
+                self.tokenizer = get_distilbert_tokenizer()
+            self.use_bert = True
         else:
             self.tokenizer = get_tokenizer("basic_english")
-            self.use_distilbert = False
+            self.use_bert = False
 
         # get longest utt
         self.longest_utt = get_longest_utt(
-            all_data, self.tokenizer, self.use_distilbert
+            all_data, self.tokenizer, self.use_bert
         )
 
         # set longest accepted acoustic file
@@ -117,7 +121,8 @@ class StandardPrep:
             glove,
             "train",
             add_avging=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            bert_type=bert_type
         )
 
         self.dev_prep = DataPrep(
@@ -132,7 +137,8 @@ class StandardPrep:
             glove,
             "dev",
             add_avging=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            bert_type=bert_type
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -150,7 +156,8 @@ class StandardPrep:
             glove,
             "test",
             add_avging=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            bert_type=bert_type
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -175,7 +182,8 @@ class SelfSplitPrep:
         pred_type=None,
         as_dict=False,
         avg_acoustic_data=False,
-        custom_feats_file=None
+        custom_feats_file=None,
+        bert_type="distilbert"
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -210,15 +218,18 @@ class SelfSplitPrep:
 
         # set tokenizer
         if glove is None:
-            self.tokenizer = get_distilbert_tokenizer()
-            self.use_distilbert = True
+            if bert_type.lower() == "bert":
+                self.tokenizer = get_bert_tokenizer()
+            else:
+                self.tokenizer = get_distilbert_tokenizer()
+            self.use_bert = True
         else:
             self.tokenizer = get_tokenizer("basic_english")
-            self.use_distilbert = False
+            self.use_bert = False
 
         # get longest utt
         self.longest_utt = get_longest_utt(
-            self.all_data, self.tokenizer, self.use_distilbert
+            self.all_data, self.tokenizer, self.use_bert
         )
 
         # set longest accepted acoustic file
@@ -237,7 +248,8 @@ class SelfSplitPrep:
             glove,
             "train",
             add_avging=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            bert_type=bert_type
         )
 
         # add pred type if needed (currently just mosi)
@@ -283,7 +295,8 @@ class DataPrep:
         glove=None,
         partition="train",
         add_avging=False,
-        custom_feats_file=None
+        custom_feats_file=None,
+        bert_type="distilbert"
     ):
         # set data type
         self.d_type = data_type
@@ -312,7 +325,7 @@ class DataPrep:
             add_avging=add_avging,
         )
         # use acoustic sets to get data tensors
-        self.data_tensors = self.make_data_tensors(data, longest_utt, glove)
+        self.data_tensors = self.make_data_tensors(data, longest_utt, glove, bert_type)
 
         # get acoustic means
         self.acoustic_means = 0
@@ -498,7 +511,7 @@ class DataPrep:
 
         return all_acoustic, ordered_acoustic_lengths
 
-    def make_data_tensors(self, text_data, longest_utt, glove=None):
+    def make_data_tensors(self, text_data, longest_utt, glove=None, bert_type="distilbert"):
         """
         Prepare tensors of utterances, genders, gold labels
         :param text_data: the df containing the text, gold, etc
@@ -508,19 +521,23 @@ class DataPrep:
         """
         if self.d_type == "meld":
             data_tensor_dict = make_data_tensors_meld(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
+                bert_type
             )
         elif self.d_type == "mustard":
             data_tensor_dict = make_data_tensors_mustard(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
+                bert_type
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             data_tensor_dict = make_data_tensors_chalearn(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
+                bert_type
             )
         elif self.d_type == "cdc":
             data_tensor_dict = make_data_tensors_cdc(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
+                bert_type
             )
         elif (
             self.d_type == "mosi"
@@ -528,23 +545,24 @@ class DataPrep:
             or self.d_type == "cmu-mosi"
         ):
             data_tensor_dict = make_data_tensors_mosi(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
+                bert_type
             )
 
         return data_tensor_dict
 
 
-def get_longest_utt(data, tokenizer, use_distilbert=False):
+def get_longest_utt(data, tokenizer, use_bert=False):
     """
     Get the length of longest utterance in the dataset
     :param data: a pandas df containing all utterances
     :param tokenizer: a tokenizer
-    :param use_distilbert: whether to use distilbert tokenizer
+    :param use_bert: whether to use bert/distilbert tokenizer
     :return: length of longest utterance
     """
     all_utts = data["utterance"].tolist()
 
-    if use_distilbert:
+    if use_bert:
         # tokenize and count all items in dataset
         item_lens = [
             len(tokenizer.tokenize("[CLS] " + str(utt) + " [SEP]")) for utt in all_utts
@@ -684,3 +702,10 @@ def get_distilbert_tokenizer():
 
     # return tokenizer
     return distilbert_emb_mkr.tokenizer
+
+def get_bert_tokenizer():
+    # instantiate bert emb onject
+    bert_emb_mkr = BertEmb()
+
+    # return
+    return bert_emb_mkr.tokenizer

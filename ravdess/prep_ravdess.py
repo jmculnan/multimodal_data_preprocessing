@@ -49,7 +49,8 @@ def prep_ravdess_data(
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
-        selected_ids=selected_ids
+        selected_ids=selected_ids,
+        embedding_type=embedding_type
     )
 
     train_data = ravdess_prep.train_data
@@ -80,7 +81,8 @@ class RavdessPrep:
         as_dict=False,
         avg_acoustic_data=False,
         custom_feats_file=None,
-        selected_ids=None
+        selected_ids=None,
+        embedding_type="distilbert"
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -102,7 +104,8 @@ class RavdessPrep:
                 f_end,
                 use_cols,
                 add_avging=avg_acoustic_data,
-                as_dict=as_dict
+                as_dict=as_dict,
+                bert_type=embedding_type
             )
         else:
             self.all_data = make_ravdess_data_tensors_with_custom_acoustic_features(
@@ -111,7 +114,8 @@ class RavdessPrep:
                 glove,
                 use_cols,
                 as_dict=as_dict,
-                selected_ids=selected_ids
+                selected_ids=selected_ids,
+                bert_type=embedding_type
             )
 
         if custom_feats_file:
@@ -151,6 +155,7 @@ def make_ravdess_data_tensors(
     use_cols=None,
     add_avging=True,
     as_dict=False,
+    bert_type="distilbert"
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -178,10 +183,13 @@ def make_ravdess_data_tensors(
         utt_length = 6
     else:
         # instantiate embeddings maker
-        emb_maker = DistilBertEmb()
-        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
+        if bert_type.lower() == "bert":
+            emb_maker = BertEmb()
+        else:
+            emb_maker = DistilBertEmb()
+        utt_1, id_1 = emb_maker.tokenize("kids are talking by the door")
         utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
-        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
+        utt_2, id_2 = emb_maker.tokenize("dogs are sitting by the door")
         utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
         utt_length = max(len(utt_1), len(utt_2))
 
@@ -315,7 +323,8 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
     glove=None,
     use_cols=None,
     as_dict=False,
-    selected_ids=None
+    selected_ids=None,
+    bert_type="distilbert"
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -344,10 +353,13 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
         utt_length = 6
     else:
         # instantiate embeddings maker
-        emb_maker = DistilBertEmb()
-        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
+        if bert_type.lower() == "bert":
+            emb_maker = BertEmb()
+        else:
+            emb_maker = DistilBertEmb()
+        utt_1, id_1 = emb_maker.tokenize("kids are talking by the door")
         utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
-        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
+        utt_2, id_2 = emb_maker.tokenize("dogs are sitting by the door")
         utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
         utt_length = max(len(utt_1), len(utt_2))
 

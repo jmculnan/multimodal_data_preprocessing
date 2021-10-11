@@ -25,7 +25,8 @@ def save_partitioned_data(
     zip=False,
     data_as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    selected_ids=None
 ):
     """
     Save partitioned data in pickled format
@@ -58,7 +59,8 @@ def save_partitioned_data(
         pred_type,
         data_as_dict,
         avg_acoustic_data,
-        custom_feats_file
+        custom_feats_file,
+        selected_ids=selected_ids
     )
 
     # use custom feats set instead of ISXX in save name
@@ -140,7 +142,8 @@ def prep_data(
     pred_type=None,
     data_as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    selected_ids=None
 ):
     """
     Prepare data for a given dataset
@@ -224,7 +227,8 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            selected_ids=selected_ids
         )
 
     return train, dev, test, weights
@@ -281,15 +285,23 @@ if __name__ == "__main__":
 
     feature_set = "IS13"
 
+    # get the ids from a pickle file containing ids in order
+    selected_ids_dict = pickle.load(open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", 'rb'))
+    selected_ids = []
+    selected_ids.extend(selected_ids_dict['train'])
+    selected_ids.extend(selected_ids_dict['test'])
+    selected_ids.extend(selected_ids_dict['dev'])
+
     transcription_type = "gold"
-    emb_type = "distilbert"
+    emb_type = "bert"
     dict_data = True
-    avg_feats = False
+    avg_feats = True
 
-    # datasets = ["cdc", "mosi", "firstimpr", "meld", "mustard", "ravdess"]
-    datasets = ["ravdess"]
+    datasets = ["cdc", "mosi", "firstimpr", "meld", "mustard", "ravdess"]
+    # datasets = ["ravdess"]
 
-    custom_feats_file = "combined_features.txt"
+    # custom_feats_file = "combined_features.txt"
+    custom_feats_file=None
 
     for dataset in datasets:
         if dataset == "mosi":
@@ -370,6 +382,7 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                selected_ids=selected_ids
             )
 

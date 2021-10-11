@@ -1,12 +1,12 @@
 from utils.data_prep_helpers import clean_up_word
-from bert.prepare_bert_embeddings import DistilBertEmb
+from bert.prepare_bert_embeddings import DistilBertEmb, BertEmb
 
 import torch
 from torch import nn
 
 
 def make_data_tensors_meld(
-    text_data, used_utts_list, longest_utt, tokenizer, glove=None
+    text_data, used_utts_list, longest_utt, tokenizer, glove=None, bert_type="distilbert"
 ):
     """
     Make the data tensors for meld
@@ -28,7 +28,10 @@ def make_data_tensors_meld(
         "all_audio_ids": [],
     }
 
-    emb_maker = DistilBertEmb()
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -54,8 +57,8 @@ def make_data_tensors_meld(
                 all_data["all_utts"].append(torch.tensor(utts))
 
             else:
-                # else use the distilbert tokenizer instead
-                utt, ids = emb_maker.distilbert_tokenize(
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(
                     clean_up_word(str(row["utterance"]))
                 )
                 utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
@@ -86,7 +89,7 @@ def make_data_tensors_meld(
 
 
 def make_data_tensors_mustard(
-    text_data, used_utts_list, longest_utt, tokenizer, glove=None
+    text_data, used_utts_list, longest_utt, tokenizer, glove=None, bert_type="distilbert"
 ):
     """
     Make the data tensors for meld
@@ -108,7 +111,10 @@ def make_data_tensors_mustard(
         "all_audio_ids": [],
     }
 
-    emb_maker = DistilBertEmb()
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
 
     for idx, row in text_data.iterrows():
         # check if this is in the list
@@ -133,8 +139,8 @@ def make_data_tensors_mustard(
                 all_data["all_utts"].append(torch.tensor(utts))
 
             else:
-                # else use the distilbert tokenizer instead
-                utt, ids = emb_maker.distilbert_tokenize(
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(
                     clean_up_word(str(row["utterance"]))
                 )
                 utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
@@ -164,7 +170,7 @@ def make_data_tensors_mustard(
 
 
 def make_data_tensors_chalearn(
-    text_data, used_utts_list, longest_utt, tokenizer, glove=None
+    text_data, used_utts_list, longest_utt, tokenizer, glove=None, bert_type="distilbert"
 ):
     """
     Make the data tensors for meld
@@ -191,7 +197,10 @@ def make_data_tensors_chalearn(
         "utt_lengths": [],
     }
 
-    emb_maker = DistilBertEmb()
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -216,8 +225,8 @@ def make_data_tensors_chalearn(
 
                 all_data["all_utts"].append(torch.tensor(utts))
             else:
-                # else use the distilbert tokenizer instead
-                utt, ids = emb_maker.distilbert_tokenize(
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(
                     clean_up_word(str(row["utterance"]))
                 )
                 utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
@@ -263,7 +272,7 @@ def make_data_tensors_chalearn(
 
 
 def make_data_tensors_cdc(
-    text_data, used_utts_list, longest_utt, tokenizer, glove=None
+    text_data, used_utts_list, longest_utt, tokenizer, glove=None, bert_type="distilbert"
 ):
     """
     Make the data tensors for meld
@@ -284,7 +293,10 @@ def make_data_tensors_cdc(
         "utt_lengths": [],
     }
 
-    emb_maker = DistilBertEmb()
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
 
     for idx, row in text_data.iterrows():
         # check if this item has acoustic data
@@ -310,8 +322,8 @@ def make_data_tensors_cdc(
 
                 all_data["all_utts"].append(torch.tensor(utts))
             else:
-                # else use the distilbert tokenizer instead
-                utt, ids = emb_maker.distilbert_tokenize(
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(
                     clean_up_word(str(row["utterance"]))
                 )
                 utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
@@ -341,7 +353,7 @@ def make_data_tensors_cdc(
     return all_data
 
 
-def make_data_tensors_mosi(text_data, used_utts_list, longest_utt, tokenizer, glove):
+def make_data_tensors_mosi(text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"):
     """
     Make the data tensors for meld
     :param text_data: a pandas df containing text and gold
@@ -361,7 +373,10 @@ def make_data_tensors_mosi(text_data, used_utts_list, longest_utt, tokenizer, gl
         "utt_lengths": [],
     }
 
-    emb_maker = DistilBertEmb()
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
 
     for idx, row in text_data.iterrows():
         if row["id"] in used_utts_list:
@@ -384,8 +399,8 @@ def make_data_tensors_mosi(text_data, used_utts_list, longest_utt, tokenizer, gl
 
                 all_data["all_utts"].append(torch.tensor(utts))
             else:
-                # else use the distilbert tokenizer instead
-                utt, ids = emb_maker.distilbert_tokenize(
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(
                     clean_up_word(str(row["utterance"]))
                 )
                 utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)

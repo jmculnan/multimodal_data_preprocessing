@@ -39,7 +39,8 @@ def prep_meld_data(
         transcription_type=transcription_type,
         use_cols=features_to_use,
         avg_acoustic_data=avg_acoustic_data,
-        custom_feats_file=custom_feats_file
+        custom_feats_file=custom_feats_file,
+        bert_type=embedding_type
     )
 
     print("Now preparing training data")
