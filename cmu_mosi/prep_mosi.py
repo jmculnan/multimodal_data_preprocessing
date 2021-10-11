@@ -17,6 +17,7 @@ def prep_mosi_data(
     pred_type="classification",
     as_dict=False,
     avg_acoustic_data=False,
+    custom_feats_file=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -39,6 +40,7 @@ def prep_mosi_data(
         pred_type=pred_type,
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
+        custom_feats_file=custom_feats_file
     )
 
     # get train, dev, test data

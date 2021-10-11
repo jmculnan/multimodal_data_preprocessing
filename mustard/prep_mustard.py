@@ -11,6 +11,7 @@ def prep_mustard_data(
     features_to_use=None,
     as_dict=False,
     avg_acoustic_data=False,
+    custom_feats_file=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -35,6 +36,7 @@ def prep_mustard_data(
         use_cols=features_to_use,
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
+        custom_feats_file=custom_feats_file
     )
 
     # get train, dev, test data

@@ -25,6 +25,7 @@ def save_partitioned_data(
     zip=False,
     data_as_dict=False,
     avg_acoustic_data=False,
+    custom_feats_file=None
 ):
     """
     Save partitioned data in pickled format
@@ -57,7 +58,13 @@ def save_partitioned_data(
         pred_type,
         data_as_dict,
         avg_acoustic_data,
+        custom_feats_file
     )
+
+    # use custom feats set instead of ISXX in save name
+    #   if custom feats are used
+    if custom_feats_file is not None:
+        feature_set = custom_feats_file.split(".")[0]
 
     if data_as_dict:
         dtype = "dict"
@@ -133,6 +140,7 @@ def prep_data(
     pred_type=None,
     data_as_dict=False,
     avg_acoustic_data=False,
+    custom_feats_file=None
 ):
     """
     Prepare data for a given dataset
@@ -155,6 +163,7 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
         train, dev, test, weights = prep_mosi_data(
@@ -167,6 +176,7 @@ def prep_data(
             pred_type,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
     elif dataset == "firstimpr" or dataset == "chalearn":
         train, dev, test, weights = prep_firstimpr_data(
@@ -179,6 +189,7 @@ def prep_data(
             pred_type,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
@@ -190,6 +201,7 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
@@ -201,6 +213,7 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
@@ -211,6 +224,7 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file
         )
 
     return train, dev, test, weights
@@ -268,77 +282,94 @@ if __name__ == "__main__":
     feature_set = "IS13"
 
     transcription_type = "gold"
+    emb_type = "distilbert"
+    dict_data = True
+    avg_feats = False
 
-    save_partitioned_data(
-        "cdc",
-        save_path,
-        cdc_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        emb_type="distilbert",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "mustard", "ravdess"]
+    datasets = ["ravdess"]
 
-    save_partitioned_data(
-        "mosi",
-        save_path,
-        mosi_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        pred_type="classification",
-        emb_type="distilbert",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )
+    custom_feats_file = "combined_features.txt"
 
-    save_partitioned_data(
-        "firstimpr",
-        save_path,
-        firstimpr_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        pred_type="max_class",
-        emb_type="glove",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )
+    for dataset in datasets:
+        if dataset == "mosi":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                mosi_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                pred_type="classification",
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
+        elif dataset == "firstimpr":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                firstimpr_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                pred_type="max_class",
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
+        elif dataset == "cdc":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                cdc_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
+        elif dataset == "meld":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                meld_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
+        elif dataset == "mustard":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                mustard_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
+        elif dataset == "ravdess":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                ravdess_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file
+            )
 
-    save_partitioned_data(
-        "meld",
-        save_path,
-        meld_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        emb_type="distilbert",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )
-
-    save_partitioned_data(
-        "mustard",
-        save_path,
-        mustard_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        emb_type="distilbert",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )
-
-    save_partitioned_data(
-        "ravdess",
-        save_path,
-        ravdess_path,
-        feature_set,
-        transcription_type,
-        glove_path,
-        emb_type="distilbert",
-        data_as_dict=True,
-        avg_acoustic_data=True,
-    )

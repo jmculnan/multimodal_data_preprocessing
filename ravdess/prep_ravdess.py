@@ -27,6 +27,8 @@ def prep_ravdess_data(
     features_to_use=None,
     as_dict=False,
     avg_acoustic_data=False,
+    custom_feats_file=None,
+    selected_ids=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -46,6 +48,8 @@ def prep_ravdess_data(
         use_cols=features_to_use,
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
+        custom_feats_file=custom_feats_file,
+        selected_ids=selected_ids
     )
 
     train_data = ravdess_prep.train_data
@@ -75,29 +79,49 @@ class RavdessPrep:
         use_cols=None,
         as_dict=False,
         avg_acoustic_data=False,
+        custom_feats_file=None,
+        selected_ids=None
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
 
         # get path to acoustic feature location
-        self.feature_path = f"{ravdess_path}/{feature_set}"
+        if custom_feats_file is None:
+            self.feature_path = f"{ravdess_path}/{feature_set}"
+        else:
+            self.feature_path = ravdess_path
 
         # get tokenizer
         self.tokenizer = get_tokenizer("basic_english")
 
         # get data tensors
-        self.all_data = make_ravdess_data_tensors(
-            self.feature_path,
-            glove,
-            f_end,
-            use_cols,
-            add_avging=avg_acoustic_data,
-            as_dict=as_dict,
-        )
+        if custom_feats_file is None:
+            self.all_data = make_ravdess_data_tensors(
+                self.feature_path,
+                glove,
+                f_end,
+                use_cols,
+                add_avging=avg_acoustic_data,
+                as_dict=as_dict
+            )
+        else:
+            self.all_data = make_ravdess_data_tensors_with_custom_acoustic_features(
+                self.feature_path,
+                custom_feats_file,
+                glove,
+                use_cols,
+                as_dict=as_dict,
+                selected_ids=selected_ids
+            )
 
-        (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
-            self.all_data, train_prop, test_prop
-        )
+        if custom_feats_file:
+            (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
+                self.all_data, train_prop, test_prop, shuffle=False
+            )
+        else:
+            (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
+                self.all_data, train_prop, test_prop
+            )
 
         # pull out ys from train to get class weights
         if as_dict:
@@ -133,7 +157,6 @@ def make_ravdess_data_tensors(
     f_end: end of acoustic file names
     use_cols: if set, should be a list [] of column names to include
     n_to_skip : the number of columns at the start to ignore (e.g. name, time)
-    # fixme: acoustic padding needed for this to work
     """
     # holder for the data
     acoustic_holder = []
@@ -144,6 +167,7 @@ def make_ravdess_data_tensors(
     repetitions = []
     speakers = []
     genders = []
+    audio_ids = []
 
     # holder for all data
     data = []
@@ -216,6 +240,7 @@ def make_ravdess_data_tensors(
                 intensities.append(intensity)
                 repetitions.append(repetition)
                 acoustic_lengths.append(feats.shape[0])
+                audio_ids.append(all_labels)
 
     # convert data to torch tensors
     if glove is not None:
@@ -259,6 +284,7 @@ def make_ravdess_data_tensors(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
+                    "audio_id": audio_ids[i]
                 }
             )
     else:
@@ -279,6 +305,173 @@ def make_ravdess_data_tensors(
                     acoustic_lengths[i].clone().detach(),
                 )
             )
+
+    return data
+
+
+def make_ravdess_data_tensors_with_custom_acoustic_features(
+    acoustic_path,
+    custom_feats_file,
+    glove=None,
+    use_cols=None,
+    as_dict=False,
+    selected_ids=None
+):
+    """
+    makes data tensors for use in RAVDESS objects
+    acoustic_path: path to acoustic RAVDESS base dir
+    custom_feats_file: the name of a file with custom features for entire dataset
+    use_cols: if set, should be a list [] of column names to include
+    selected_ids: if not none, should contain the order of all ids
+    """
+    # holder for the data
+    acoustic_holder = []
+    acoustic_lengths = []
+    emotions = []
+    intensities = []
+    utterances = []
+    repetitions = []
+    speakers = []
+    genders = []
+    audio_ids = []
+
+    # holder for all data
+    data = []
+
+    if glove is not None:
+        utt_1 = glove.index(["kids", "are", "talking", "by", "the", "door"])
+        utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
+        utt_length = 6
+    else:
+        # instantiate embeddings maker
+        emb_maker = DistilBertEmb()
+        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
+        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
+        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
+        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+        utt_length = max(len(utt_1), len(utt_2))
+
+    # will have to do two for loops
+    # one to get the longest acoustic df
+    # the other to organize data tensors
+
+    # open acoustic features file
+    path_to_acoustic_file = f"{acoustic_path}/{custom_feats_file}"
+
+    # read in features file as pd DataFrame
+    if use_cols is not None:
+        feats = pd.read_csv(path_to_acoustic_file, usecols=use_cols, sep=",")
+    else:
+        feats = pd.read_csv(path_to_acoustic_file, sep=",")
+
+    feats.set_index("file_name", inplace=True)
+
+    # extract necessary information from each row
+    for index, row in feats.iterrows():
+        labels_list = index.split("-")
+
+        emotion = int(labels_list[2]) - 1  # to make it zero-based
+        intensity = int(labels_list[3]) - 1  # to make it zero based
+        utterance = int(labels_list[4])
+        repetition = int(labels_list[5])
+        speaker = int(labels_list[6])
+        if speaker % 2 == 0:
+            gender = 1
+        else:
+            gender = 2
+
+        if utterance % 2 == 0:
+            utt = utt_2
+        else:
+            utt = utt_1
+
+        # order of items: acoustic, utt, spkr, gender, emotion
+        #   intensity, repetition #, utt_length, acoustic_length
+        # custom feature values are already averaged, so no need to
+        #   add torch.mean here
+        acoustic_holder.append(torch.tensor(row.tolist()))
+        utterances.append(utt)
+        speakers.append(speaker)
+        genders.append(gender)
+        emotions.append(emotion)
+        intensities.append(intensity)
+        repetitions.append(repetition)
+        acoustic_lengths.append(1)  # because averaged, all are 1
+        audio_ids.append(index)
+
+    # convert data to torch tensors
+    if glove is not None:
+        utterances = torch.tensor(utterances)
+    else:
+        utterances = torch.stack(utterances)
+        utterances = torch.squeeze(utterances, dim=0)
+    speakers = torch.tensor(speakers)
+    genders = torch.tensor(genders)
+    emotions = torch.tensor(emotions)
+    intensities = torch.tensor(intensities)
+    repetitions = torch.tensor(repetitions)
+    acoustic_lengths = torch.tensor(acoustic_lengths)
+
+    # acoustic feats are already overall for file
+    #   so don't need padding for an rnn
+    acoustic_holder = torch.stack(acoustic_holder)
+    print(acoustic_holder.shape)
+
+    # get means, stdev
+    acoustic_means, acoustic_stdev = get_acoustic_means(acoustic_holder)
+
+    if as_dict:
+        for i in range(len(acoustic_holder)):
+            acoustic_data = transform_acoustic_item(
+                acoustic_holder[i], acoustic_means, acoustic_stdev
+            )
+            data.append(
+                {
+                    "x_acoustic": acoustic_data.clone().detach(),
+                    "x_utt": utterances[i].clone().detach(),
+                    "x_speaker": speakers[i].clone().detach(),
+                    "x_gender": genders[i].clone().detach(),
+                    "ys": [
+                        intensities[i].clone().detach(),
+                        emotions[i].clone().detach(),
+                    ],
+                    "repetition": repetitions[i].clone().detach(),
+                    "utt_length": utt_length,
+                    "acoustic_length": acoustic_lengths[i].clone().detach(),
+                    "audio_id": audio_ids[i]
+                }
+            )
+    else:
+        for i in range(len(acoustic_holder)):
+            acoustic_data = transform_acoustic_item(
+                acoustic_holder[i], acoustic_means, acoustic_stdev
+            )
+            data.append(
+                (
+                    acoustic_data.clone().detach(),
+                    utterances[i].clone().detach(),
+                    speakers[i].clone().detach(),
+                    genders[i].clone().detach(),
+                    intensities[i].clone().detach(),
+                    emotions[i].clone().detach(),
+                    repetitions[i].clone().detach(),
+                    6,
+                    acoustic_lengths[i].clone().detach(),
+                )
+            )
+
+    # if using an ordered list of items
+    if selected_ids:
+        # find order of all ids in data
+        data_ordered_ids = [item['audio_id'] for item in data]
+        idx = list(range(len(data_ordered_ids)))
+        # create dict of id: idx
+        data2idx = dict(zip(data_ordered_ids, idx))
+        # reorder data to match order of selected_ids
+        new_data = []
+        for item in selected_ids:
+            new_data.append(data[data2idx[item]])
+        data = new_data
 
     return data
 

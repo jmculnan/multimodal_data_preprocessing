@@ -15,6 +15,9 @@ from transformers import BertTokenizer, BertModel
 
 import statistics
 
+random.seed(345)
+
+
 
 class DatumListDataset(Dataset):
     """
@@ -281,16 +284,18 @@ def create_data_folds(data, perc_train, perc_test):
     return train_data, dev_data, test_data
 
 
-def create_data_folds_list(data, perc_train, perc_test):
+def create_data_folds_list(data, perc_train, perc_test, shuffle=True):
     """
     Create train, dev, and test data folds
     Specify the percentage that goes into each
     data: A LIST of the data that goes into all folds
     perc_* : the percentage for each fold
     Percentage not included in train or test fold allocated to dev
+    shuffle: whether to shuffle the data
     """
-    # shuffle the data
-    random.shuffle(data)
+    if shuffle:
+        # shuffle the data
+        random.shuffle(data)
 
     # get length
     length = len(data)
