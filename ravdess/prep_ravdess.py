@@ -16,6 +16,7 @@ from utils.data_prep_helpers import (
     create_data_folds_list,
     Glove,
     make_glove_dict,
+    get_data_samples,
 )
 
 
@@ -28,7 +29,8 @@ def prep_ravdess_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
-    selected_ids=None
+    selected_ids=None,
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -49,7 +51,8 @@ def prep_ravdess_data(
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
-        selected_ids=selected_ids
+        selected_ids=selected_ids,
+        embedding_type=embedding_type,
     )
 
     train_data = ravdess_prep.train_data
@@ -59,6 +62,9 @@ def prep_ravdess_data(
     # get class weights
     # todo: allow to get emotion or intensity or both
     class_weights = ravdess_prep.intensity_weights
+
+    if num_train_ex:
+        train_data = get_data_samples(train_data, num_train_ex)
 
     return train_data, dev_data, test_data, class_weights
 
@@ -80,7 +86,8 @@ class RavdessPrep:
         as_dict=False,
         avg_acoustic_data=False,
         custom_feats_file=None,
-        selected_ids=None
+        selected_ids=None,
+        embedding_type="distilbert",
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -102,7 +109,8 @@ class RavdessPrep:
                 f_end,
                 use_cols,
                 add_avging=avg_acoustic_data,
-                as_dict=as_dict
+                as_dict=as_dict,
+                bert_type=embedding_type,
             )
         else:
             self.all_data = make_ravdess_data_tensors_with_custom_acoustic_features(
@@ -111,7 +119,8 @@ class RavdessPrep:
                 glove,
                 use_cols,
                 as_dict=as_dict,
-                selected_ids=selected_ids
+                selected_ids=selected_ids,
+                bert_type=embedding_type,
             )
 
         if custom_feats_file:
@@ -151,6 +160,7 @@ def make_ravdess_data_tensors(
     use_cols=None,
     add_avging=True,
     as_dict=False,
+    bert_type="distilbert",
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -177,12 +187,21 @@ def make_ravdess_data_tensors(
         utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
         utt_length = 6
     else:
+        utt_1_text = "kids are talking by the door"
+        utt_2_text = "dogs are sitting by the door"
         # instantiate embeddings maker
-        emb_maker = DistilBertEmb()
-        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
-        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
-        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
-        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+        if bert_type.lower() == "bert":
+            emb_maker = BertEmb()
+            utt_1, id_1 = emb_maker.tokenize(utt_1_text)
+            utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1).unsqueeze(0), 8)
+            utt_2, id_2 = emb_maker.tokenize(utt_2_text)
+            utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2).unsqueeze(0), 8)
+        else:
+            emb_maker = DistilBertEmb()
+            utt_1, id_1 = emb_maker.tokenize(utt_1_text)
+            utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
+            utt_2, id_2 = emb_maker.tokenize(utt_2_text)
+            utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
         utt_length = max(len(utt_1), len(utt_2))
 
     # will have to do two for loops
@@ -284,7 +303,7 @@ def make_ravdess_data_tensors(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
-                    "audio_id": audio_ids[i]
+                    "audio_id": audio_ids[i],
                 }
             )
     else:
@@ -315,7 +334,8 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
     glove=None,
     use_cols=None,
     as_dict=False,
-    selected_ids=None
+    selected_ids=None,
+    bert_type="distilbert",
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -344,11 +364,14 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
         utt_length = 6
     else:
         # instantiate embeddings maker
-        emb_maker = DistilBertEmb()
-        utt_1, id_1 = emb_maker.distilbert_tokenize("kids are talking by the door")
-        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
-        utt_2, id_2 = emb_maker.distilbert_tokenize("dogs are sitting by the door")
-        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+        if bert_type.lower() == "bert":
+            emb_maker = BertEmb()
+        else:
+            emb_maker = DistilBertEmb()
+        utt_1, id_1 = emb_maker.tokenize("kids are talking by the door")
+        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1).unsqueeze(0), 8)
+        utt_2, id_2 = emb_maker.tokenize("dogs are sitting by the door")
+        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2).unsqueeze(0), 8)
         utt_length = max(len(utt_1), len(utt_2))
 
     # will have to do two for loops
@@ -438,7 +461,7 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
-                    "audio_id": audio_ids[i]
+                    "audio_id": audio_ids[i],
                 }
             )
     else:
@@ -463,7 +486,7 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
     # if using an ordered list of items
     if selected_ids:
         # find order of all ids in data
-        data_ordered_ids = [item['audio_id'] for item in data]
+        data_ordered_ids = [item["audio_id"] for item in data]
         idx = list(range(len(data_ordered_ids)))
         # create dict of id: idx
         data2idx = dict(zip(data_ordered_ids, idx))

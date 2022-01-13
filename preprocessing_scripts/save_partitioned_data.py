@@ -25,7 +25,9 @@ def save_partitioned_data(
     zip=False,
     data_as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    selected_ids=None,
+    num_train_ex=None,
 ):
     """
     Save partitioned data in pickled format
@@ -58,7 +60,9 @@ def save_partitioned_data(
         pred_type,
         data_as_dict,
         avg_acoustic_data,
-        custom_feats_file
+        custom_feats_file,
+        selected_ids=selected_ids,
+        num_train_ex=num_train_ex,
     )
 
     # use custom feats set instead of ISXX in save name
@@ -140,7 +144,9 @@ def prep_data(
     pred_type=None,
     data_as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    selected_ids=None,
+    num_train_ex=None,
 ):
     """
     Prepare data for a given dataset
@@ -163,7 +169,8 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
         train, dev, test, weights = prep_mosi_data(
@@ -176,7 +183,8 @@ def prep_data(
             pred_type,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
         )
     elif dataset == "firstimpr" or dataset == "chalearn":
         train, dev, test, weights = prep_firstimpr_data(
@@ -189,7 +197,8 @@ def prep_data(
             pred_type,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
@@ -201,7 +210,8 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
@@ -213,7 +223,8 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
@@ -224,7 +235,9 @@ def prep_data(
             feats_to_use,
             as_dict=data_as_dict,
             avg_acoustic_data=avg_acoustic_data,
-            custom_feats_file=custom_feats_file
+            custom_feats_file=custom_feats_file,
+            selected_ids=selected_ids,
+            num_train_ex=num_train_ex,
         )
 
     return train, dev, test, weights
@@ -281,15 +294,30 @@ if __name__ == "__main__":
 
     feature_set = "IS13"
 
+    # get the ids from a pickle file containing ids in order
+    selected_ids_dict = pickle.load(
+        open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
+    )
+    selected_ids = []
+    selected_ids.extend(selected_ids_dict["train"])
+    selected_ids.extend(selected_ids_dict["test"])
+    selected_ids.extend(selected_ids_dict["dev"])
+
     transcription_type = "gold"
-    emb_type = "distilbert"
+    # emb_type = "distilbert"
+    emb_type = "bert"
     dict_data = True
-    avg_feats = False
+    avg_feats = True
 
-    # datasets = ["cdc", "mosi", "firstimpr", "meld", "mustard", "ravdess"]
-    datasets = ["ravdess"]
+    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    # datasets = ["ravdess"]
 
-    custom_feats_file = "combined_features.txt"
+    # custom_feats_file = "combined_features_small.txt"
+    custom_feats_file = None
+
+    # set number of training examples
+    # num_train = 500
+    num_train = None
 
     for dataset in datasets:
         if dataset == "mosi":
@@ -304,7 +332,8 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                num_train_ex=num_train,
             )
         elif dataset == "firstimpr":
             save_partitioned_data(
@@ -318,7 +347,8 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                num_train_ex=num_train,
             )
         elif dataset == "cdc":
             save_partitioned_data(
@@ -331,7 +361,8 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                num_train_ex=num_train,
             )
         elif dataset == "meld":
             save_partitioned_data(
@@ -344,7 +375,8 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                num_train_ex=num_train,
             )
         elif dataset == "mustard":
             save_partitioned_data(
@@ -357,7 +389,8 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                num_train_ex=num_train,
             )
         elif dataset == "ravdess":
             save_partitioned_data(
@@ -370,6 +403,7 @@ if __name__ == "__main__":
                 emb_type=emb_type,
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file
+                custom_feats_file=custom_feats_file,
+                selected_ids=selected_ids,
+                num_train_ex=num_train,
             )
-

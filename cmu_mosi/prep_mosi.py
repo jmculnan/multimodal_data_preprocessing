@@ -2,7 +2,7 @@ import h5py
 import re
 
 from prep_data import SelfSplitPrep
-from utils.data_prep_helpers import make_glove_dict, Glove
+from utils.data_prep_helpers import make_glove_dict, Glove, get_data_samples
 
 from utils.audio_extraction import run_feature_extraction
 
@@ -17,7 +17,8 @@ def prep_mosi_data(
     pred_type="classification",
     as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -40,7 +41,8 @@ def prep_mosi_data(
         pred_type=pred_type,
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
-        custom_feats_file=custom_feats_file
+        custom_feats_file=custom_feats_file,
+        bert_type=embedding_type,
     )
 
     # get train, dev, test data
@@ -54,6 +56,9 @@ def prep_mosi_data(
 
     # get updated class weights using train ys
     class_weights = mosi_prep.get_updated_class_weights(train_ys)
+
+    if num_train_ex:
+        train_data = get_data_samples(train_data, num_train_ex)
 
     return train_data, dev_data, test_data, class_weights
 
