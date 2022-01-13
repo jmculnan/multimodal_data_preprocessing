@@ -1,9 +1,10 @@
-
 import pickle
 import random
 
 
-def subset_data(pickled_file, num_data_points, equal_classes=True, num_points_eq_k=False):
+def subset_data(
+    pickled_file, num_data_points, equal_classes=True, num_points_eq_k=False
+):
     # get the name of the pickled file
     # assumes file ends with extension .pickle or .p
     # if equal_classes, every class has same number of points
@@ -20,7 +21,7 @@ def subset_data(pickled_file, num_data_points, equal_classes=True, num_points_eq
     new_name = f"{file_name}_{str(num_data_points)}{ext}"
     save_path = f"{'/'.join(file_name_parts[:-1])}/{new_name}"
 
-    data = pickle.load(open(pickled_file, 'rb'))
+    data = pickle.load(open(pickled_file, "rb"))
 
     if equal_classes:
         new_data = []
@@ -33,19 +34,31 @@ def subset_data(pickled_file, num_data_points, equal_classes=True, num_points_eq
             if num_data_points > len(sorted_data[y_class]):
                 print(f"{num_data_points} is greater than {len(sorted_data[y_class])}")
                 if not num_points_eq_k:
-                    new_data.extend(random.choices(sorted_data[y_class],
-                                                   k=round(num_data_points/len(sorted_data.keys()))))
+                    new_data.extend(
+                        random.choices(
+                            sorted_data[y_class],
+                            k=round(num_data_points / len(sorted_data.keys())),
+                        )
+                    )
                     print(len(new_data))
                 else:
-                    new_data.extend(random.choices(sorted_data[y_class], k=num_data_points))
+                    new_data.extend(
+                        random.choices(sorted_data[y_class], k=num_data_points)
+                    )
             else:
                 print(f"{num_data_points} is less than {len(sorted_data[y_class])}")
                 if not num_points_eq_k:
-                    new_data.extend(random.sample(sorted_data[y_class],
-                                                  round(num_data_points/len(sorted_data.keys()))))
+                    new_data.extend(
+                        random.sample(
+                            sorted_data[y_class],
+                            round(num_data_points / len(sorted_data.keys())),
+                        )
+                    )
                     print(len(new_data))
                 else:
-                    new_data.extend(random.sample(sorted_data[y_class], num_data_points))
+                    new_data.extend(
+                        random.sample(sorted_data[y_class], num_data_points)
+                    )
 
         # shuffle the data, since it's organized by class
         random.shuffle(new_data)
@@ -55,7 +68,7 @@ def subset_data(pickled_file, num_data_points, equal_classes=True, num_points_eq
         else:
             new_data = random.sample(data, num_data_points)
 
-    pickle.dump(new_data, open(save_path, 'wb'))
+    pickle.dump(new_data, open(save_path, "wb"))
 
     print(f"New data with {num_data_points} data points saved:")
     print(save_path)
@@ -78,11 +91,9 @@ def separate_data_by_class(dataset):
 
     # sort data
     for item in dataset:
-        data_by_class[int(item['ys'][0])].append(item)
+        data_by_class[int(item["ys"][0])].append(item)
 
     return data_by_class
-
-
 
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
 from prep_data import *
-from utils.data_prep_helpers import Glove, make_glove_dict, get_speaker_to_index_dict, get_data_samples
+from utils.data_prep_helpers import (
+    Glove,
+    make_glove_dict,
+    get_speaker_to_index_dict,
+    get_data_samples,
+)
 
 
 def prep_mustard_data(
@@ -12,7 +17,7 @@ def prep_mustard_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
-    num_train_ex=None
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -38,7 +43,7 @@ def prep_mustard_data(
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
-        bert_type=embedding_type
+        bert_type=embedding_type,
     )
 
     # get train, dev, test data

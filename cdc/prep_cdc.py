@@ -6,7 +6,12 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from prep_data import SelfSplitPrep
-from utils.data_prep_helpers import split_string_time, make_glove_dict, Glove, get_data_samples
+from utils.data_prep_helpers import (
+    split_string_time,
+    make_glove_dict,
+    Glove,
+    get_data_samples,
+)
 from utils.audio_extraction import (
     extract_portions_of_mp4_or_wav,
     convert_to_wav,
@@ -24,7 +29,7 @@ def prep_cdc_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
-    num_train_ex=None
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -47,7 +52,7 @@ def prep_cdc_data(
         as_dict=as_dict,
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
-        bert_type=embedding_type
+        bert_type=embedding_type,
     )
 
     # get train, dev, test data

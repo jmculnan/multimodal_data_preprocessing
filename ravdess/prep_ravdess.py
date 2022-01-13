@@ -15,7 +15,8 @@ from utils.data_prep_helpers import (
     get_gender_avgs,
     create_data_folds_list,
     Glove,
-    make_glove_dict, get_data_samples,
+    make_glove_dict,
+    get_data_samples,
 )
 
 
@@ -29,7 +30,7 @@ def prep_ravdess_data(
     avg_acoustic_data=False,
     custom_feats_file=None,
     selected_ids=None,
-    num_train_ex=None
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -51,7 +52,7 @@ def prep_ravdess_data(
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
         selected_ids=selected_ids,
-        embedding_type=embedding_type
+        embedding_type=embedding_type,
     )
 
     train_data = ravdess_prep.train_data
@@ -86,7 +87,7 @@ class RavdessPrep:
         avg_acoustic_data=False,
         custom_feats_file=None,
         selected_ids=None,
-        embedding_type="distilbert"
+        embedding_type="distilbert",
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -109,7 +110,7 @@ class RavdessPrep:
                 use_cols,
                 add_avging=avg_acoustic_data,
                 as_dict=as_dict,
-                bert_type=embedding_type
+                bert_type=embedding_type,
             )
         else:
             self.all_data = make_ravdess_data_tensors_with_custom_acoustic_features(
@@ -119,7 +120,7 @@ class RavdessPrep:
                 use_cols,
                 as_dict=as_dict,
                 selected_ids=selected_ids,
-                bert_type=embedding_type
+                bert_type=embedding_type,
             )
 
         if custom_feats_file:
@@ -159,7 +160,7 @@ def make_ravdess_data_tensors(
     use_cols=None,
     add_avging=True,
     as_dict=False,
-    bert_type="distilbert"
+    bert_type="distilbert",
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -296,7 +297,7 @@ def make_ravdess_data_tensors(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
-                    "audio_id": audio_ids[i]
+                    "audio_id": audio_ids[i],
                 }
             )
     else:
@@ -328,7 +329,7 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
     use_cols=None,
     as_dict=False,
     selected_ids=None,
-    bert_type="distilbert"
+    bert_type="distilbert",
 ):
     """
     makes data tensors for use in RAVDESS objects
@@ -454,7 +455,7 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
                     "repetition": repetitions[i].clone().detach(),
                     "utt_length": utt_length,
                     "acoustic_length": acoustic_lengths[i].clone().detach(),
-                    "audio_id": audio_ids[i]
+                    "audio_id": audio_ids[i],
                 }
             )
     else:
@@ -479,7 +480,7 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
     # if using an ordered list of items
     if selected_ids:
         # find order of all ids in data
-        data_ordered_ids = [item['audio_id'] for item in data]
+        data_ordered_ids = [item["audio_id"] for item in data]
         idx = list(range(len(data_ordered_ids)))
         # create dict of id: idx
         data2idx = dict(zip(data_ordered_ids, idx))

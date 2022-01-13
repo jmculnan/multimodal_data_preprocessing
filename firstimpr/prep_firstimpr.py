@@ -13,7 +13,7 @@ def prep_firstimpr_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
-    num_train_ex=None
+    num_train_ex=None,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -39,7 +39,7 @@ def prep_firstimpr_data(
         use_cols=features_to_use,
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
-        bert_type=embedding_type
+        bert_type=embedding_type,
     )
 
     # add the prediction type, since first impressions can have several

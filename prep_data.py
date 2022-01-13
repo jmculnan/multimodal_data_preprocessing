@@ -56,7 +56,7 @@ class StandardPrep:
         use_cols=None,
         avg_acoustic_data=False,
         custom_feats_file=None,
-        bert_type="distilbert"
+        bert_type="distilbert",
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -101,9 +101,7 @@ class StandardPrep:
             self.use_bert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(
-            all_data, self.tokenizer, self.use_bert
-        )
+        self.longest_utt = get_longest_utt(all_data, self.tokenizer, self.use_bert)
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -122,7 +120,7 @@ class StandardPrep:
             "train",
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
-            bert_type=bert_type
+            bert_type=bert_type,
         )
 
         self.dev_prep = DataPrep(
@@ -138,7 +136,7 @@ class StandardPrep:
             "dev",
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
-            bert_type=bert_type
+            bert_type=bert_type,
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -157,7 +155,7 @@ class StandardPrep:
             "test",
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
-            bert_type=bert_type
+            bert_type=bert_type,
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -183,7 +181,7 @@ class SelfSplitPrep:
         as_dict=False,
         avg_acoustic_data=False,
         custom_feats_file=None,
-        bert_type="distilbert"
+        bert_type="distilbert",
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -228,9 +226,7 @@ class SelfSplitPrep:
             self.use_bert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(
-            self.all_data, self.tokenizer, self.use_bert
-        )
+        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_bert)
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -249,7 +245,7 @@ class SelfSplitPrep:
             "train",
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
-            bert_type=bert_type
+            bert_type=bert_type,
         )
 
         # add pred type if needed (currently just mosi)
@@ -296,7 +292,7 @@ class DataPrep:
         partition="train",
         add_avging=False,
         custom_feats_file=None,
-        bert_type="distilbert"
+        bert_type="distilbert",
     ):
         # set data type
         self.d_type = data_type
@@ -310,7 +306,10 @@ class DataPrep:
                 data_path, data_type, feature_set, acoustic_cols_used
             )
         else:
-            self.acoustic_dict, self.acoustic_lengths_dict = make_acoustic_dict_with_custom_features(
+            (
+                self.acoustic_dict,
+                self.acoustic_lengths_dict,
+            ) = make_acoustic_dict_with_custom_features(
                 data_path, custom_feats_file, data_type, acoustic_cols_used
             )
 
@@ -511,7 +510,9 @@ class DataPrep:
 
         return all_acoustic, ordered_acoustic_lengths
 
-    def make_data_tensors(self, text_data, longest_utt, glove=None, bert_type="distilbert"):
+    def make_data_tensors(
+        self, text_data, longest_utt, glove=None, bert_type="distilbert"
+    ):
         """
         Prepare tensors of utterances, genders, gold labels
         :param text_data: the df containing the text, gold, etc
@@ -521,23 +522,19 @@ class DataPrep:
         """
         if self.d_type == "meld":
             data_tensor_dict = make_data_tensors_meld(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
-                bert_type
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
         elif self.d_type == "mustard":
             data_tensor_dict = make_data_tensors_mustard(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
-                bert_type
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             data_tensor_dict = make_data_tensors_chalearn(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
-                bert_type
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
         elif self.d_type == "cdc":
             data_tensor_dict = make_data_tensors_cdc(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
-                bert_type
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
         elif (
             self.d_type == "mosi"
@@ -545,8 +542,7 @@ class DataPrep:
             or self.d_type == "cmu-mosi"
         ):
             data_tensor_dict = make_data_tensors_mosi(
-                text_data, self.used_ids, longest_utt, self.tokenizer, glove,
-                bert_type
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
 
         return data_tensor_dict
@@ -646,7 +642,9 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     return acoustic_dict, acoustic_lengths
 
 
-def make_acoustic_dict_with_custom_features(file_path, feats_file_name, dataset, use_cols=None):
+def make_acoustic_dict_with_custom_features(
+    file_path, feats_file_name, dataset, use_cols=None
+):
     """
     Make the acoustic dict when non-openSMILE features are used
     :param file_path: the path to the file containing all features for this dataset
@@ -670,12 +668,16 @@ def make_acoustic_dict_with_custom_features(file_path, feats_file_name, dataset,
 
     # change name of audio id if using meld
     if dataset == "meld":
-        feats['file_name'] = feats['file_name'].apply(lambda x: (x.split("_")[0], x.split("_")[1]))
+        feats["file_name"] = feats["file_name"].apply(
+            lambda x: (x.split("_")[0], x.split("_")[1])
+        )
     elif dataset == "cdc":
-        feats['file_name'] = feats['file_name'].apply(lambda x: x.split("_")[1])
+        feats["file_name"] = feats["file_name"].apply(lambda x: x.split("_")[1])
     elif dataset == "firstimpr":
         # custom dataset converted . to _ between fname and clip num
-        feats['file_name'] = feats['file_name'].apply(lambda x: ".00".join(x.split("_00")))
+        feats["file_name"] = feats["file_name"].apply(
+            lambda x: ".00".join(x.split("_00"))
+        )
 
     # set ID as index
     feats = feats.set_index("file_name")
@@ -687,7 +689,9 @@ def make_acoustic_dict_with_custom_features(file_path, feats_file_name, dataset,
     acoustic_dict = feats.T.to_dict("list")
 
     # convert each value to a DataFrame
-    acoustic_dict = {key: pd.DataFrame(value).T.astype(float) for key, value in acoustic_dict.items()}
+    acoustic_dict = {
+        key: pd.DataFrame(value).T.astype(float) for key, value in acoustic_dict.items()
+    }
 
     # create parallel dict for acoustic lengths
     acoustic_lengths = {key: 1 for key in acoustic_dict.keys()}
@@ -702,6 +706,7 @@ def get_distilbert_tokenizer():
 
     # return tokenizer
     return distilbert_emb_mkr.tokenizer
+
 
 def get_bert_tokenizer():
     # instantiate bert emb onject

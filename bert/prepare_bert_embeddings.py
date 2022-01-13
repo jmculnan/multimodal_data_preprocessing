@@ -163,12 +163,12 @@ class BertEmb:
             token_embeddings = token_embeddings.permute(1, 0, 2)
             # # get word embeddings
             for emb_layer_mat in token_embeddings:
-            #     # todo: try out different versions of this for performance
-            #     # select penultimate hidden layer as embedding
+                #     # todo: try out different versions of this for performance
+                #     # select penultimate hidden layer as embedding
                 token_emb = emb_layer_mat[-2]
-            #
-            #     # add this embedding to word counts and add to idx2emb
-            #     # todo asap: just add embeddings directly to data and pickle all together
+                #
+                #     # add this embedding to word counts and add to idx2emb
+                #     # todo asap: just add embeddings directly to data and pickle all together
                 embeddings.append(token_emb)
 
         embeddings = torch.stack(embeddings)

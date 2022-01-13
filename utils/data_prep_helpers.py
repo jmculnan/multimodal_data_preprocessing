@@ -18,7 +18,6 @@ import statistics
 random.seed(345)
 
 
-
 class DatumListDataset(Dataset):
     """
     A dataset to hold a list of datums
@@ -328,6 +327,7 @@ def get_data_samples(data_list, num_samples):
         new_samples = random.sample(data_list, num_samples)
 
     return new_samples
+
 
 # I found this method recently, in a discussion that sometimes weights are better
 # served in the loss function than in a sampler.  What you were returning below
