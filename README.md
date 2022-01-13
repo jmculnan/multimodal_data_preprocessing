@@ -14,7 +14,7 @@ Text may be encoded with GloVe or DistilBERT.
 * CMU MOSI (http://multicomp.cs.cmu.edu/resources/cmu-mosi-dataset/)
 
 ## Using the datasets
-To make use of the data preprocessing code, download the raw data for each dataset of interest. Run [XXXX- may not be complete yet] to extract acoustic features and organize raw data, then alter and run `scripts/save_partitioned_data.py` to save partitioned data. 
+To make use of the data preprocessing code, download the raw data for each dataset of interest. Run [XXXX- may not be complete yet] to extract acoustic features and organize raw data, then alter and run `preprocessing_scripts/save_partitioned_data.py` to save partitioned data. 
 
 Saved data may be used as input into custom-made machine learning models in PyTorch (https://pytorch.org/) or models from our associated repos:
 

@@ -64,7 +64,12 @@ def make_data_tensors_meld(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -149,7 +154,12 @@ def make_data_tensors_mustard(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -238,7 +248,12 @@ def make_data_tensors_chalearn(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -338,7 +353,12 @@ def make_data_tensors_cdc(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 
@@ -415,7 +435,12 @@ def make_data_tensors_mosi(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
-                utt_embs = emb_maker.get_embeddings(utt, torch.tensor(ids), longest_utt)
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
                 all_data["utt_lengths"].append(len(ids))
 

@@ -304,7 +304,8 @@ if __name__ == "__main__":
     selected_ids.extend(selected_ids_dict["dev"])
 
     transcription_type = "gold"
-    emb_type = "distilbert"
+    # emb_type = "distilbert"
+    emb_type = "bert"
     dict_data = True
     avg_feats = True
 
@@ -315,7 +316,8 @@ if __name__ == "__main__":
     custom_feats_file = None
 
     # set number of training examples
-    num_train = 500
+    # num_train = 500
+    num_train = None
 
     for dataset in datasets:
         if dataset == "mosi":

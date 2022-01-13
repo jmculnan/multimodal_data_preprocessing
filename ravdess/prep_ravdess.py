@@ -187,15 +187,21 @@ def make_ravdess_data_tensors(
         utt_2 = glove.index(["dogs", "are", "sitting", "by", "the", "door"])
         utt_length = 6
     else:
+        utt_1_text = "kids are talking by the door"
+        utt_2_text = "dogs are sitting by the door"
         # instantiate embeddings maker
         if bert_type.lower() == "bert":
             emb_maker = BertEmb()
+            utt_1, id_1 = emb_maker.tokenize(utt_1_text)
+            utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1).unsqueeze(0), 8)
+            utt_2, id_2 = emb_maker.tokenize(utt_2_text)
+            utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2).unsqueeze(0), 8)
         else:
             emb_maker = DistilBertEmb()
-        utt_1, id_1 = emb_maker.tokenize("kids are talking by the door")
-        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
-        utt_2, id_2 = emb_maker.tokenize("dogs are sitting by the door")
-        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+            utt_1, id_1 = emb_maker.tokenize(utt_1_text)
+            utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
+            utt_2, id_2 = emb_maker.tokenize(utt_2_text)
+            utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
         utt_length = max(len(utt_1), len(utt_2))
 
     # will have to do two for loops
@@ -363,9 +369,9 @@ def make_ravdess_data_tensors_with_custom_acoustic_features(
         else:
             emb_maker = DistilBertEmb()
         utt_1, id_1 = emb_maker.tokenize("kids are talking by the door")
-        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1), 8)
+        utt_1 = emb_maker.get_embeddings(utt_1, torch.tensor(id_1).unsqueeze(0), 8)
         utt_2, id_2 = emb_maker.tokenize("dogs are sitting by the door")
-        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2), 8)
+        utt_2 = emb_maker.get_embeddings(utt_2, torch.tensor(id_2).unsqueeze(0), 8)
         utt_length = max(len(utt_1), len(utt_2))
 
     # will have to do two for loops
