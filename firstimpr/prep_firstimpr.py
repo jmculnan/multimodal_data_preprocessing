@@ -1,5 +1,5 @@
 from prep_data import *
-from utils.data_prep_helpers import Glove, make_glove_dict
+from utils.data_prep_helpers import Glove, make_glove_dict, get_data_samples
 
 
 def prep_firstimpr_data(
@@ -13,6 +13,7 @@ def prep_firstimpr_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
+    num_train_ex=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -56,6 +57,9 @@ def prep_firstimpr_data(
 
     # get class weights
     class_weights = firstimpr_prep.train_prep.class_weights
+
+    if num_train_ex:
+        train_data = get_data_samples(train_data, num_train_ex)
 
     return train_data, dev_data, test_data, class_weights
 

@@ -15,7 +15,7 @@ from utils.data_prep_helpers import (
     get_gender_avgs,
     create_data_folds_list,
     Glove,
-    make_glove_dict,
+    make_glove_dict, get_data_samples,
 )
 
 
@@ -28,7 +28,8 @@ def prep_ravdess_data(
     as_dict=False,
     avg_acoustic_data=False,
     custom_feats_file=None,
-    selected_ids=None
+    selected_ids=None,
+    num_train_ex=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -60,6 +61,9 @@ def prep_ravdess_data(
     # get class weights
     # todo: allow to get emotion or intensity or both
     class_weights = ravdess_prep.intensity_weights
+
+    if num_train_ex:
+        train_data = get_data_samples(train_data, num_train_ex)
 
     return train_data, dev_data, test_data, class_weights
 

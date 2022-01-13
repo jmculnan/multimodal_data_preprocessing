@@ -3,9 +3,10 @@ import os
 import glob
 import re
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from prep_data import SelfSplitPrep
-from utils.data_prep_helpers import split_string_time, make_glove_dict, Glove
+from utils.data_prep_helpers import split_string_time, make_glove_dict, Glove, get_data_samples
 from utils.audio_extraction import (
     extract_portions_of_mp4_or_wav,
     convert_to_wav,
@@ -22,7 +23,8 @@ def prep_cdc_data(
     features_to_use=None,
     as_dict=False,
     avg_acoustic_data=False,
-    custom_feats_file=None
+    custom_feats_file=None,
+    num_train_ex=None
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -59,6 +61,10 @@ def prep_cdc_data(
 
     # get updated class weights using train ys
     class_weights = cdc_prep.get_updated_class_weights(train_ys)
+
+    # # get a subset of the training data, if necessary
+    if num_train_ex:
+        train_data = get_data_samples(train_data, num_train_ex)
 
     return train_data, dev_data, test_data, class_weights
 

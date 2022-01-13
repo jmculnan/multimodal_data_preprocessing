@@ -319,6 +319,16 @@ def get_avg_vec(nested_list):
     return [statistics.mean(item) for item in zip(*nested_list)]
 
 
+def get_data_samples(data_list, num_samples):
+    # get a new set of training data samples
+    # given data and number of samples
+    if num_samples > len(data_list):
+        new_samples = random.choices(data_list, num_samples)
+    else:
+        new_samples = random.sample(data_list, num_samples)
+
+    return new_samples
+
 # I found this method recently, in a discussion that sometimes weights are better
 # served in the loss function than in a sampler.  What you were returning below
 # seem to be counts, not weights.  These are automatically calculated by sklearn, and
