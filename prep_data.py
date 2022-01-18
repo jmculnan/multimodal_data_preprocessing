@@ -15,7 +15,7 @@ from torch import nn
 from torchtext.data import get_tokenizer
 
 from combine_xs_and_ys_by_dataset import (
-    combine_xs_and_ys_chalearn,
+    combine_xs_and_ys_firstimpr,
     combine_xs_and_ys_meld,
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
@@ -384,7 +384,7 @@ class DataPrep:
                 as_dict=as_dict,
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
-            combined = combine_xs_and_ys_chalearn(
+            combined = combine_xs_and_ys_firstimpr(
                 self.data_tensors,
                 self.acoustic_tensor,
                 self.acoustic_lengths,
@@ -477,10 +477,6 @@ class DataPrep:
             acoustic_data = acoustic_dict[item]
             ordered_acoustic_lengths.append(acoustic_lengths_dict[item])
 
-            # if acoustic_data.shape[0] == 1:
-            #     acoustic_holder = torch.tensor(acoustic_data.iloc[0])
-            #     print(acoustic_holder)
-            #     exit()
             if not add_avging:
                 acoustic_data = acoustic_data[acoustic_data.index <= longest_acoustic]
                 acoustic_holder = torch.tensor(acoustic_data.values)

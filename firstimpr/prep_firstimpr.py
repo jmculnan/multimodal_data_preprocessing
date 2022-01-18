@@ -64,8 +64,67 @@ def prep_firstimpr_data(
     return train_data, dev_data, test_data, class_weights
 
 
-if __name__ == "__main__":
-    train, dev, test, weights = prep_firstimpr_data()
+# todo: add back in to firstimpr ys
+def convert_ys(ys, conversion="high-low", mean_y=None, one_third=None, two_thirds=None):
+    """
+    Convert a set of ys into binary high-low labels
+    or ternary high-medium-low labels
+    Uses the mean for binary and one-third and two-third
+        markers for ternary labels
+    """
+    new_ys = []
+    if conversion == "high-low" or conversion == "binary":
+        for item in ys:
+            if mean_y:
+                if item >= mean_y:
+                    new_ys.append(1)
+                else:
+                    new_ys.append(0)
+            else:
+                if item >= 0.5:
+                    new_ys.append(1)
+                else:
+                    new_ys.append(0)
+    elif conversion == "high-med-low" or conversion == "ternary":
+        if one_third and two_thirds:
+            for item in ys:
+                if item >= two_thirds:
+                    new_ys.append(2)
+                elif one_third <= item < two_thirds:
+                    new_ys.append(1)
+                else:
+                    new_ys.append(0)
+        else:
+            for item in ys:
+                if item >= 0.67:
+                    new_ys.append(2)
+                elif 0.34 <= item < 0.67:
+                    new_ys.append(1)
+                else:
+                    new_ys.append(0)
+    return new_ys
 
-    print(weights)
-    print(type(train))
+# example usage of above function for the sake of reimplementation
+# 1. get the locations you want
+# here we want 1/3 of the data and 2/3 of the data
+# q_measure = torch.tensor([0.33, 0.67])
+#
+# 2. get the 1/3 and 2/3 quantiles
+# consc_onethird, consc_twothird = torch.quantile(
+#     self.train_y_consc, q_measure
+# )
+#
+# 3. update y values
+# self.train_y_consc = convert_ys(
+#     self.train_y_consc,
+#     pred_type,
+#     one_third=consc_onethird,
+#     two_thirds=consc_twothird,
+# )
+
+# with binary classification
+# 1. find mean (or median)
+# consc_mean = torch.mean(self.train_y_consc)
+#
+# 2. update y values
+# self.train_y_consc = convert_ys(self.train_y_consc, pred_type, consc_mean)
