@@ -77,7 +77,7 @@ class ExtractAudio:
     Takes audio and extracts features from it using openSMILE
     """
 
-    def __init__(self, path, audiofile, savedir, smilepath="~/opensmile-2.3.0"):
+    def __init__(self, path, audiofile, savedir, smilepath="~/opensmile-3.0"):
         self.path = path
         self.afile = path + "/" + audiofile
         self.savedir = savedir
@@ -94,7 +94,7 @@ class ExtractAudio:
             "ISO9": "is09-13/IS09_emotion.conf",
             "IS10": "is09-13/IS10_paraling.conf",
             "IS12": "is09-13/IS12_speaker_trait.conf",
-            "IS13": "IS13_ComParE.conf",
+            "IS13": "is09-13/IS13_ComParE.conf",
         }
 
         fconf = conf_dict.get(feature_set, "IS13_ComParE.conf")
@@ -105,7 +105,7 @@ class ExtractAudio:
         # run openSMILE
         sp.run(
             [
-                f"{self.smile}/SMILExtract",
+                f"{self.smile}/build/progsrc/smilextract/SMILExtract",
                 "-C",
                 f"{self.smile}/config/{fconf}",
                 "-I",
@@ -243,23 +243,18 @@ class GetFeatures:
         return feature_set
 
 
-def run_feature_extraction(audio_path, feature_set, save_dir, dataset="mustard"):
+def run_feature_extraction(audio_path, feature_set, save_dir):
     """
-    Run feature extraction from audio_extraction.py for meld
+    Run feature extraction from audio_extraction.py for a dataset
     """
     # make sure the full save path exists; if not, create it
     os.system(f'if [ ! -d "{save_dir}" ]; then mkdir -p {save_dir}; fi')
 
     # save all files in the directory
     for wfile in os.listdir(audio_path):
-        # if dataset == "meld":
-        #     save_name = str(wfile.split("_2.wav")[0]) + f"_{feature_set}.csv"
-        #     meld_extractor = ExtractAudio(audio_path, wfile, save_dir, "../../opensmile-2.3.0")
-        #     meld_extractor.save_acoustic_csv(feature_set, save_name)
-        # else:
         save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
         audio_extractor = ExtractAudio(
-            audio_path, wfile, save_dir, "../../opensmile-2.3.0"
+            audio_path, wfile, save_dir, "../../opensmile-3.0"
         )
         audio_extractor.save_acoustic_csv(feature_set, save_name)
 

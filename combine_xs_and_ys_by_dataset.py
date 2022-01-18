@@ -109,7 +109,7 @@ def combine_xs_and_ys_mustard(
     return data
 
 
-def combine_xs_and_ys_chalearn(
+def combine_xs_and_ys_firstimpr(
     data_dict,
     acoustic_data,
     acoustic_lengths,
