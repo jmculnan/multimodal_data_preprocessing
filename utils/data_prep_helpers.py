@@ -116,20 +116,28 @@ class MultitaskTestObject(object):
         """
         self.loss_multiplier = multiplier
 
+
 # todo: test out using this sampler
 class BatchSchedulerSampler(torch.utils.data.sampler.Sampler):
     """
     iterate over tasks and provide a random batch per task in each mini-batch
     Slightly altered from: https://gist.github.com/bomri/d93da3e6f840bb93406f40a6590b9c48
     """
+
     def __init__(self, dataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
         self.number_of_datasets = len(dataset.datasets)
-        self.largest_dataset_size = max([len(cur_dataset.samples) for cur_dataset in dataset.datasets])
+        self.largest_dataset_size = max(
+            [len(cur_dataset.samples) for cur_dataset in dataset.datasets]
+        )
 
     def __len__(self):
-        return self.batch_size * math.ceil(self.largest_dataset_size / self.batch_size) * len(self.dataset.datasets)
+        return (
+            self.batch_size
+            * math.ceil(self.largest_dataset_size / self.batch_size)
+            * len(self.dataset.datasets)
+        )
 
     def __iter__(self):
         samplers_list = []

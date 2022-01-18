@@ -104,6 +104,7 @@ def convert_ys(ys, conversion="high-low", mean_y=None, one_third=None, two_third
                     new_ys.append(0)
     return new_ys
 
+
 # example usage of above function for the sake of reimplementation
 # 1. get the locations you want
 # here we want 1/3 of the data and 2/3 of the data
