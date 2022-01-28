@@ -4,7 +4,7 @@
 import librosa
 import soundfile as sf
 import torch
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor, Wav2Vec2ProcessorWithLM, Wav2Vec2FeatureExtractor
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor, Wav2Vec2ProcessorWithLM, Wav2Vec2FeatureExtractor, Wav2Vec2Config
 import nltk
 import os
 
@@ -14,12 +14,11 @@ def load_model():
     tokenizer = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
 
     # model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
+    # model = Wav2Vec2ForCTC.from_pretrained("jonatasgrosman/wav2vec2-large-xlsr-53-english")
     model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
     return tokenizer, model
 
 def extract_feats(input_audio):
-
-    extractor = Wav2Vec2FeatureExtractor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 
     speech, fs = sf.read(input_audio)
 
@@ -32,10 +31,15 @@ def extract_feats(input_audio):
     # feats = extractor(speech, return_tensors="pt", sampling_rate=16000)
     # return_attention_mask=True with wav2vec2-large-960h-lv60-self
     #   but False with wav2vec2-base-960h
-    feats = extractor(speech, return_tensors="pt", sampling_rate=16000, return_attention_mask=True,
-                      do_normalize=True) # feature_size=30
+    feats = tokenizer(speech, return_tensors="pt", sampling_rate=16000, return_attention_mask=True,
+                      do_normalize=True).input_values # feature_size=30
 
-    return feats, feats['input_values'].shape
+    with torch.no_grad():
+        # get the last hidden layer as an multidimensional embedding of the sequence
+        # todo: will need to aggregate or pad when making model-usable dataset
+        feats = model(feats, output_hidden_states=True).hidden_states[-1]
+
+    return feats
 
 
 def correct_sentence(input_text):
@@ -104,13 +108,14 @@ def transcript_of_dir(input_dir):
 if __name__ == "__main__":
     the_files = "../../datasets/test_then_delete/MELD_formatted/train/train_audio_mono"
 
-    transcript_of_dir(the_files)
+    tokenizer, model = load_model()
+    # transcript_of_dir(the_files)
 
-    # for f in os.listdir(the_files):
-    #     if f.endswith(".wav"):
-    #         item = f
-    # # i2t = transcript_of_dir(the_files)
-    #         print(extract_feats(f"{the_files}/{f}"))
+    for f in os.listdir(the_files):
+        if f.endswith(".wav"):
+            item = f
+    # i2t = transcript_of_dir(the_files)
+            print(extract_feats(f"{the_files}/{f}"))
 
     # with open("../../datasets/test_then_delete/meld_test_trans.tsv", 'a') as pf:
     #     for k in i2t.keys():
