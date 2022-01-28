@@ -10,3 +10,6 @@ smile.log
 
 # other
 .DS_Store
+
+# downloaded pretrained wav2vec models being tested
+wav2vec/pretrained_wav2vec_models
