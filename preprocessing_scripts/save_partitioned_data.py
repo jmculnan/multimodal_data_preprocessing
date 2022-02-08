@@ -304,6 +304,7 @@ if __name__ == "__main__":
     selected_ids.extend(selected_ids_dict["dev"])
 
     transcription_type = "gold"
+    # emb_type = "glove"
     # emb_type = "distilbert"
     emb_type = "bert"
     dict_data = True
