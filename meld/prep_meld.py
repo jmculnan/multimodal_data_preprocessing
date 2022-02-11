@@ -2,7 +2,6 @@ from sklearn.model_selection import train_test_split
 
 from prep_data import *
 from utils.data_prep_helpers import Glove, make_glove_dict, get_data_samples
-from bert.prepare_bert_embeddings import *
 
 
 def prep_meld_data(

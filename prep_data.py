@@ -182,6 +182,7 @@ class SelfSplitPrep:
         avg_acoustic_data=False,
         custom_feats_file=None,
         bert_type="distilbert",
+        include_spectrograms=False
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -246,6 +247,7 @@ class SelfSplitPrep:
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             bert_type=bert_type,
+            include_spectrograms=include_spectrograms
         )
 
         # add pred type if needed (currently just mosi)
@@ -293,6 +295,7 @@ class DataPrep:
         add_avging=False,
         custom_feats_file=None,
         bert_type="distilbert",
+        include_spectrograms=False
     ):
         # set data type
         self.d_type = data_type
@@ -312,6 +315,9 @@ class DataPrep:
             ) = make_acoustic_dict_with_custom_features(
                 data_path, custom_feats_file, data_type, acoustic_cols_used
             )
+
+        if include_spectrograms:
+            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
 
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
@@ -494,6 +500,51 @@ class DataPrep:
 
         # delete acoustic dict to save space
         del acoustic_dict
+
+        # pad the sequence and reshape it to proper format
+        # this is here to keep the formatting for acoustic RNN
+        all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
+        all_acoustic = all_acoustic.transpose(0, 1)
+        all_acoustic = all_acoustic.float()
+        # all_acoustic = all_acoustic.type(torch.FloatTensor)
+
+        print(f"Acoustic set made at {datetime.datetime.now()}")
+
+        return all_acoustic, ordered_acoustic_lengths
+
+    def make_spectrogram_set(
+        self,
+        spec_dict,
+        spec_lengths_dict,
+        longest_spec=1500
+    ):
+        """
+        Prepare the spectrogram data
+        :param spec_dict: a dict of acoustic feat dfs
+        :param spec_lengths_dict: a dict of lengths of spectrograms
+        :param longest_spec: the longest allowed spec df
+        :return:
+        """
+
+        # set holders for acoustic data
+        all_spec = []
+        ordered_spec_lengths = []
+
+        # for all items with audio + gold label
+        for item in self.used_ids:
+
+            # pull out the acoustic feats df
+            acoustic_data = spec_dict[item]
+            ordered_spec_lengths.append(spec_lengths_dict[item])
+
+            spec_data = spec_data[spec_data.index <= longest_spec]
+            acoustic_holder = torch.tensor(acoustic_data.values)
+
+            # add features as tensor to acoustic data
+            all_spec.append(acoustic_holder)
+
+        # delete acoustic dict to save space
+        del spec_dict
 
         # pad the sequence and reshape it to proper format
         # this is here to keep the formatting for acoustic RNN
@@ -694,6 +745,49 @@ def make_acoustic_dict_with_custom_features(
 
     # return
     return acoustic_dict, acoustic_lengths
+
+
+def make_spectrograms_dict(file_path, dataset):
+    """
+    Make a dict of spectrograms to include in data
+    Uses pre-saved spectrogram CSV files
+    :param file_path: the path to the file containing all features for this dataset
+    :param dataset: the name of the dataset
+    :return: a dict of spectograms, dict of length of each spectrogram
+    """
+    print(f"Starting spectrogram dict at {datetime.datetime.now()}")
+
+    spec_dict = {}
+    spec_lengths = {}
+
+    # get the acoustic features files
+    for spec_file in glob.glob(f"{file_path}/spec/*.csv"):
+        # read each file as a pandas df
+        spec = pd.read_csv(spec_file)
+
+        # get the id
+        feats_file_name = spec_file.split("/")[-1]
+
+        if dataset == "meld":
+            dia_id, utt_id = feats_file_name.split("_")[:2]
+            id = (dia_id, utt_id)
+        elif dataset == "cdc":
+            id = feats_file_name.split("_")[1]
+        else:
+            id = feats_file_name.split(".csv")[0]
+
+        # save the dataframe to a dict with id as key
+        if spec.shape[0] > 0:
+            spec_dict[id] = spec
+            # do this so we can ensure same order of lengths and feats
+            spec_lengths[id] = spec.shape[0]
+
+        # delete the features df bc it takes up lots of space
+        del spec
+
+    print(f"Acoustic dict made at {datetime.datetime.now()}")
+    print(f"Len of dict: {len(spec_dict.keys())}")
+    return spec_dict, spec_lengths
 
 
 def get_distilbert_tokenizer():
