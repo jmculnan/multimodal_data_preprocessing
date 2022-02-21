@@ -102,32 +102,40 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True):
 
     # access path
     for f in glob.glob(f"{corpus_path}/*"):
-        if f.endswith(".trs") or f.endswith(".json"):
-            # split into name of file and name of path
-            fpath, fname = f.rsplit("/", 1)
+        if json_data:
+            if f.endswith(".json"):
+                # split into name of file and name of path
+                fpath, fname = f.rsplit("/", 1)
 
-            # make csv converter item from this
-            csv_converter = TranscriptToCSV(fpath, fname)
-
-            if json_data:
+                # make csv converter item from this
+                csv_converter = TranscriptToCSV(fpath, fname)
                 if flatten_data:
                     utt_data = csv_converter.convert_json(alignment="utt")
-                    save_path = f"{fpath}/transcription/lives_json_gold.csv"
+                    save_path = f"{fpath}/transcript/lives_json_gold.csv"
                 else:
                     utt_data = csv_converter.convert_json(alignment="word")
                     save_path = f"{fpath}/transcript/lives_json_gold_wordaligned.csv"
-            else:
+
+                csv_converter.save_data(utt_data, savepath=save_path)
+
+        else:
+            if f.endswith(".trs") or f.endswith(".json"):
+                # split into name of file and name of path
+                fpath, fname = f.rsplit("/", 1)
+
+                # make csv converter item from this
+                csv_converter = TranscriptToCSV(fpath, fname)
                 if flatten_data:
                     trs_df = csv_converter.convert_trs()
                     utt_data = csv_converter.flatten_data(trs_df)
 
                     # save this utterance-level data
-                    save_path = f"{fpath}/transcription/lives_gold.csv"
+                    save_path = f"{fpath}/transcript/lives_gold.csv"
                 else:
                     utt_data = csv_converter.convert_trs()
                     save_path = f"{fpath}/transcript/lives_gold_wordaligned.csv"
 
-            csv_converter.save_data(utt_data, savepath=save_path)
+                csv_converter.save_data(utt_data, savepath=save_path)
 
 
 class TranscriptToCSV:
@@ -178,17 +186,38 @@ class TranscriptToCSV:
             # set new index
             new_idx = 0
 
-            # subtract one because the last item in the transcription is all of the words in the entire thing
+            # last item in transcription contains timestamped words + speakers
+            # create a list of time stamps + speakers to add to the data
+            # list of (speaker, start, end) tuples
+            spkr_timestamp_df = self.get_speaker_timestamps(whole_transcription[-1])
+            # print(spkr_timestamp_df)
+            # exit()
+
+            # go through and get utterances out of transcription
             for i in range(len(whole_transcription)):
                 if len(whole_transcription[i]['alternatives'][0].keys()) > 1:
                     transcription = pd.DataFrame(whole_transcription[i]['alternatives'][0]['words'])
-                    transcription["startTime"] = transcription["startTime"].str.replace(r's', '')
-                    transcription["endTime"] = transcription["endTime"].str.replace(r's', '')
+                    transcription["startTime"] = transcription["startTime"].str.replace(r's', '').astype("float")
+                    transcription["endTime"] = transcription["endTime"].str.replace(r's', '').astype("float")
                     i += 1
                     transcription["utt_num"] = i
                     transcription = transcription.rename_axis('word_num').reset_index()
                     transcription["word_num"] += 1
-                    transcription["speaker"] = "unk"
+
+                    # iterate over rows and get list of speakers from other df, then add as new column
+                    speakers = []
+
+                    # get all the speakers using the speaker timestamp df
+                    for row in transcription.itertuples():
+                        start_time = row.startTime
+                        end_time = row.endTime
+
+                        speaker = spkr_timestamp_df.loc[(spkr_timestamp_df['startTime'] <= start_time) &
+                                                        (spkr_timestamp_df['endTime'] >= end_time)]['speaker'].values[0]
+
+                        speakers.append(speaker)
+
+                    transcription["speaker"] = speakers
                     transcription["sid"] = participant
                     transcription["recording_id"] = recording_id
 
@@ -219,7 +248,7 @@ class TranscriptToCSV:
                                     # utt_num = this_utt['utt_num'].iloc[0] + new_idx
                                     utt_num = new_idx
                                     speaker = this_utt['speaker'].iloc[0]
-                                    start_time= this_utt['startTime'].iloc[0]
+                                    start_time = this_utt['startTime'].iloc[0]
                                     end_time = this_utt['endTime'].iloc[-1]
                                     utterance = this_utt['word'].str.cat(sep=" ")
                                     # update utterance number
@@ -273,6 +302,16 @@ class TranscriptToCSV:
             json_arr.columns = ["sid", "recording_id", "utt_num", "speaker", "timestart", "timeend", "utt"]
 
         return json_arr
+
+    def get_speaker_from_timestamp(self, word_level_df, speaker_timestamp_list):
+        """
+        Use the timestamp information on speakers to get speaker
+        :param word_level_df: a df containing word-level information
+        :param speaker_timestamp_list: a list of tuples with (speaker, start time, end time)
+        :return:
+        """
+
+
 
     def convert_trs(self):
         """
@@ -374,6 +413,37 @@ class TranscriptToCSV:
 
         return utt_level_data
 
+    def get_speaker_timestamps(self, word_level_json):
+        """
+        Get timestamps with start and end of a speaker's speech
+        :param word_level_json: A json containing words, speakers, and times
+        :return: A pandas df of speaker and start time columns
+        """
+        # holder for output
+        all_spkr_times = []
+
+        # go through word_level_json
+        all_words = pd.DataFrame(word_level_json["alternatives"][0]["words"])
+        all_words["startTime"] = all_words["startTime"].str.replace(r's', '').astype("float")
+        all_words["endTime"] = all_words["endTime"].str.replace(r's', '').astype("float")
+
+        final_end_time = all_words["endTime"].iloc[-1]
+
+        all_words['speaker_change'] = all_words['speakerTag'].diff()
+        all_speaker_changes = all_words[all_words["speaker_change"] != 0].index
+
+        for i, item in enumerate(all_speaker_changes):
+            speaker = all_words['speakerTag'].iloc[item]
+            timestart = all_words['startTime'].iloc[item]
+            all_spkr_times.append([speaker, timestart])
+
+        all_spkr_times = pd.DataFrame(all_spkr_times, columns=["speaker", "startTime"])
+
+        all_spkr_times["endTime"] = all_spkr_times["startTime"].shift(-1)
+        all_spkr_times["endTime"].iloc[-1] = final_end_time
+
+        return all_spkr_times
+
     def save_data(self, data, savepath):
         """
         To save the data that has been converted
@@ -399,128 +469,8 @@ class TranscriptToCSV:
             data.to_csv(savepath, index=False)
 
 
-def prep_cdc_trs_data(
-    trs_file_path, ltf_file_path, save_filename_and_path, speaker=None, utt_num=0
-):
-    """
-    Convert CDC trs files to organized tsv
-    :return: the new utterance number
-    """
-    # holder for utterance and gold data
-    all_utts = []
-
-    # add header if the file doesn't exist
-    if not os.path.exists(save_filename_and_path):
-        all_utts.append(
-            "speaker\tutt_num\tutterance\ttime_start\ttime_end\ttruth_value"
-        )
-
-    # prepare the ltf (gold labeled) data
-    ltf_data = []
-    with open(ltf_file_path, "r") as ltf_file:
-        # skip first two lines
-        ltf_file.readlines(2)
-        for line in ltf_file:
-            # tab separated
-            line = line.strip().split("\t")
-            # gold label
-            truth_val = line[0]
-            # start time -- mm:ss.s string
-            line_start_time = split_string_time(line[1])
-            # end time -- mm:ss.s string
-            line_end_time = split_string_time(line[2])
-            # add to line
-            ltf_data.append([truth_val, line_start_time, line_end_time])
-
-    # open trs file
-    with open(trs_file_path, "r") as read_in:
-        # pointer to position within ltf_data to reduce redundant searching
-        ltf_pointer = 0
-
-        if speaker is None:
-            # get the speaker for this file
-            speaker = re.search(r"S-(\S+)_R", trs_file_path.split("/")[-1]).group(1)
-
-        # read in all lines but first 6 and last 4
-        used_lines = read_in.readlines()[6:-4]
-
-        for i, line in enumerate(used_lines):
-            # find lines containing times; this is the start time
-
-            if line.startswith("<Sync time="):
-                # clean up the following line
-                utt = cdc_string_cleanup(used_lines[i + 1])
-
-                # check if empty
-                if len(utt) > 2:
-                    # get start time
-                    start_time = float(
-                        re.search(r'<Sync time="(\S+)"/>', line).group(1)
-                    )
-
-                    # get the utt number
-                    utt_num += 1
-
-                    try:
-                        # get end time -- should usually be two lines after
-                        end_time = float(
-                            re.search(r'<Sync time="(\S+)"/>', used_lines[i + 2]).group(
-                                1
-                            )
-                        )
-                    # if end time isn't where we expect it
-                    except AttributeError:
-                        end_found = False
-                        j = 1
-                        # search for end time
-                        while not end_found:
-                            if used_lines[i + 2 + j].startswith("<Sync time="):
-                                end_time = float(
-                                    re.search(
-                                        r'<Sync time="(\S+)"/>', used_lines[i + 2 + j]
-                                    ).group(1)
-                                )
-                                end_found = True
-                            else:
-                                j += 1
-
-                    # match start and end times with truth values
-                    truth_value = None
-                    find_truth = True
-                    # find overlap between gold label times and speech times
-                    while find_truth:
-                        # see if gold label time fully contains speech times
-                        if (
-                            ltf_data[ltf_pointer][1] <= start_time
-                            and ltf_data[ltf_pointer][2] >= end_time
-                        ):
-                            truth_value = ltf_data[ltf_pointer][0]
-                            find_truth = False
-                        # see if a new value is added during the speech -- this should be the gold
-                        elif start_time <= ltf_data[ltf_pointer][1] <= end_time:
-                            truth_value = ltf_data[ltf_pointer][0]
-                            find_truth = False
-                        # if it's after the last press, it should have the last label
-                        elif ltf_pointer == len(ltf_data) - 1:
-                            truth_value = ltf_data[ltf_pointer][0]
-                            find_truth = False
-                        else:
-                            ltf_pointer += 1
-
-                    all_utts.append(
-                        f"{speaker}\t{utt_num}\t{utt}\t{start_time}\t{end_time}\t{truth_value}"
-                    )
-
-    # save the data
-    with open(save_filename_and_path, "a") as savefile:
-        savefile.write("\n".join(all_utts))
-        savefile.write("\n")
-
-    return utt_num
-
-
 if __name__ == "__main__":
-    cpath = "../../lives_test/to_do"
+    cpath = "../../lives_test/done"
 
-    # preprocess_lives(cpath, flatten_data=True, json_data=True)
-    preprocess_lives(cpath, flatten_data=False, json_data=True)
+    preprocess_lives(cpath, flatten_data=True, json_data=True)
+    # preprocess_lives(cpath, flatten_data=False, json_data=True)
