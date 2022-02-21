@@ -30,7 +30,7 @@ from utils.audio_extraction import (
 
 
 def prep_lives_data(
-    data_path="../../datasets/multimodal_datasets/Columbia_deception_corpus",
+    data_path="../../lives_test/done",
     feature_set="IS13",
     transcription_type="gold",
     embedding_type="distilbert",
@@ -49,11 +49,11 @@ def prep_lives_data(
         glove = None
 
     # holder for name of file containing utterance info
-    utts_name = f"cdc_{transcription_type.lower()}.tsv"
+    utts_name = f"transcript/lives_json_{transcription_type.lower()}.csv"
 
     # create instance of StandardPrep class
     cdc_prep = SelfSplitPrep(
-        data_type="cdc",
+        data_type="lives",
         data_path=data_path,
         feature_set=feature_set,
         utterance_fname=utts_name,
@@ -142,7 +142,7 @@ class TranscriptToCSV:
     """
     Takes a trs or json file and converts it to a csv
     Used to preprocess data into the format expected by this repo
-    note: trs contains diarization, json does not
+    note: trs contains diarization, json diarization is in a separate part of the file
     lines of csvfile are speaker,timestart,timeend, word, utt_num where:
         speaker   = caller or patient
         timestart = time of start of turn
@@ -180,7 +180,6 @@ class TranscriptToCSV:
             # get transcription json
             whole_transcription = json.load(trs)
 
-            # if alignment.lower() == "word" or alignment.lower() == "wd":
             all_trans = []
 
             # set new index
@@ -188,10 +187,8 @@ class TranscriptToCSV:
 
             # last item in transcription contains timestamped words + speakers
             # create a list of time stamps + speakers to add to the data
-            # list of (speaker, start, end) tuples
+            # df containing speaker, start, end
             spkr_timestamp_df = self.get_speaker_timestamps(whole_transcription[-1])
-            # print(spkr_timestamp_df)
-            # exit()
 
             # go through and get utterances out of transcription
             for i in range(len(whole_transcription)):
@@ -286,7 +283,7 @@ class TranscriptToCSV:
             json_arr = pd.concat(all_trans)
         else:
             json_arr = pd.DataFrame(all_trans)
-            json_arr.columns = ["sid", "recording_id", "utt_num", "speaker", "timestart", "timeend", "utt"]
+            json_arr.columns = ["sid", "recording_id", "utt_num", "speaker", "timestart", "timeend", "utterance"]
 
         return json_arr
 
@@ -468,8 +465,15 @@ class TranscriptToCSV:
             data.to_csv(savepath, index=False)
 
 
+def get_lives_speakers(df):
+    # get lives speakers by combining the 'speaker' category with the 'sid' category
+    all_speakers = df[['speaker', 'sid', ...]].agg('-'.join, axis=1)
+
+    return set(all_speakers.unique())
+
+
 if __name__ == "__main__":
     cpath = "../../lives_test/done"
 
-    # preprocess_lives(cpath, flatten_data=True, json_data=True)
-    preprocess_lives(cpath, flatten_data=False, json_data=True)
+    preprocess_lives(cpath, flatten_data=True, json_data=True)
+    # preprocess_lives(cpath, flatten_data=False, json_data=True)
