@@ -204,20 +204,7 @@ class TranscriptToCSV:
                     transcription = transcription.rename_axis('word_num').reset_index()
                     transcription["word_num"] += 1
 
-                    # iterate over rows and get list of speakers from other df, then add as new column
-                    speakers = []
-
-                    # get all the speakers using the speaker timestamp df
-                    for row in transcription.itertuples():
-                        start_time = row.startTime
-                        end_time = row.endTime
-
-                        speaker = spkr_timestamp_df.loc[(spkr_timestamp_df['startTime'] <= start_time) &
-                                                        (spkr_timestamp_df['endTime'] >= end_time)]['speaker'].values[0]
-
-                        speakers.append(speaker)
-
-                    transcription["speaker"] = speakers
+                    transcription["speaker"] = self._get_speaker_from_timestamp(transcription, spkr_timestamp_df)
                     transcription["sid"] = participant
                     transcription["recording_id"] = recording_id
 
@@ -303,15 +290,27 @@ class TranscriptToCSV:
 
         return json_arr
 
-    def get_speaker_from_timestamp(self, word_level_df, speaker_timestamp_list):
+    def _get_speaker_from_timestamp(self, word_level_df, speaker_timestamp_df):
         """
         Use the timestamp information on speakers to get speaker
         :param word_level_df: a df containing word-level information
-        :param speaker_timestamp_list: a list of tuples with (speaker, start time, end time)
+        :param speaker_timestamp_df: a dataframe with speaker, start time, end time
         :return:
         """
+        # iterate over rows and get list of speakers from other df, then add as new column
+        speakers = []
 
+        # get all the speakers using the speaker timestamp df
+        for row in word_level_df.itertuples():
+            start_time = row.startTime
+            end_time = row.endTime
 
+            speaker = speaker_timestamp_df.loc[(speaker_timestamp_df['startTime'] <= start_time) &
+                                            (speaker_timestamp_df['endTime'] >= end_time)]['speaker'].values[0]
+
+            speakers.append(speaker)
+
+        return speakers
 
     def convert_trs(self):
         """
@@ -472,5 +471,5 @@ class TranscriptToCSV:
 if __name__ == "__main__":
     cpath = "../../lives_test/done"
 
-    preprocess_lives(cpath, flatten_data=True, json_data=True)
-    # preprocess_lives(cpath, flatten_data=False, json_data=True)
+    # preprocess_lives(cpath, flatten_data=True, json_data=True)
+    preprocess_lives(cpath, flatten_data=False, json_data=True)
