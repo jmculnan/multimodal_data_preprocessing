@@ -66,11 +66,21 @@ def extract_acoustic_features(datasets_list, base_path, feature_set):
                 feature_set,
                 f"{ravdess_path}/{feature_set}",
             )
+        elif dataset == "lives":
+            lives_path = base_path
+            run_feature_extraction(f"{lives_path}/wav",
+                                   feature_set,
+                                   f"{lives_path}/{feature_set}")
 
 
 if __name__ == "__main__":
 
-    datasets = ["mosi", "ravdess"]
-    base_path = "../../datasets/multimodal_datasets"
+    # datasets = ["mosi", "ravdess"]
+    # base_path = "../../datasets/multimodal_datasets"
 
-    extract_acoustic_features(datasets, base_path, "spec")
+    dataset = ["lives"]
+    base_path = "../../lives_test/done"
+
+    extract_acoustic_features(dataset, base_path, "spec")
+
+    # extract_acoustic_features(datasets, base_path, "spec")

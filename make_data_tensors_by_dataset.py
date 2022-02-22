@@ -495,10 +495,11 @@ def make_data_tensors_lives(
         emb_maker = DistilBertEmb()
 
     for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for LIvES"):
-        if row["id"] in used_utts_list:
+        if f"{row['recording_id']}_{row['utt_num']}" in used_utts_list:
+        # if row["id"] in used_utts_list:
 
             # get audio id
-            all_data["all_audio_ids"].append(row["id"])
+            all_data["all_audio_ids"].append(f"{row['recording_id']}_{row['utt_num']}")
 
             if glove is not None:
                 # create utterance-level holders

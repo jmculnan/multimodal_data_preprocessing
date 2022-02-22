@@ -1,6 +1,7 @@
 from cdc.prep_cdc import *
 from cmu_mosi.prep_mosi import *
 from firstimpr.prep_firstimpr import *
+from lives_health.prep_lives import prep_lives_data
 from meld.prep_meld import *
 from mustard.prep_mustard import *
 from ravdess.prep_ravdess import *
@@ -239,6 +240,19 @@ def prep_data(
             selected_ids=selected_ids,
             num_train_ex=num_train_ex,
         )
+    elif dataset == "lives":
+        train, dev, test, weights = prep_lives_data(
+            data_path,
+            feature_set,
+            transcription_type,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
+        )
 
     return train, dev, test, weights
 
@@ -287,6 +301,7 @@ if __name__ == "__main__":
     meld_path = f"{base_path}/MELD_formatted"
     mustard_path = f"{base_path}/MUStARD"
     ravdess_path = f"{base_path}/RAVDESS_Speech"
+    lives_path = "../../lives_test/done"
 
     save_path = "../../datasets/pickled_data"
 
@@ -311,8 +326,9 @@ if __name__ == "__main__":
     avg_feats = False
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    datasets = ["firstimpr", "meld", "ravdess"]
+    # datasets = ["firstimpr", "meld", "ravdess"]
     # datasets = ["mustard"]
+    datasets = ["lives"]
 
     # custom_feats_file = "combined_features_small.txt"
     custom_feats_file = None
@@ -408,4 +424,19 @@ if __name__ == "__main__":
                 custom_feats_file=custom_feats_file,
                 selected_ids=selected_ids,
                 num_train_ex=num_train,
+            )
+        elif dataset == "lives":
+            save_partitioned_data(
+                dataset,
+                save_path,
+                lives_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                data_as_dict=dict_data,
+                avg_acoustic_data=avg_feats,
+                custom_feats_file=custom_feats_file,
+                selected_ids=selected_ids,
+                num_train_ex=num_train
             )

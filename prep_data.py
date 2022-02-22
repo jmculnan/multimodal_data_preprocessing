@@ -22,7 +22,7 @@ from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_cdc,
     combine_xs_and_ys_mosi, combine_xs_and_ys_lives,
 )
-from lives_health.prep_lives import get_lives_speakers
+
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
 from make_data_tensors_by_dataset import *
 
@@ -472,6 +472,9 @@ class DataPrep:
             or self.d_type == "cmu_mosi"
         ):
             valid_ids = text_data["id"].tolist()
+        elif self.d_type == "lives":
+            text_data['utt_num'] = text_data['utt_num'].astype(str)
+            valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -660,6 +663,14 @@ def get_paths(data_type, data_path):
         dev = f"{data_path}/val"
 
     return train, dev, test
+
+
+def get_lives_speakers(df):
+    # get lives speakers by combining the 'speaker' category with the 'sid' category
+    df['speaker'] = df['speaker'].astype(str)
+    all_speakers = df[['speaker', 'sid']].agg('-'.join, axis=1)
+
+    return set(all_speakers.unique())
 
 
 def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):

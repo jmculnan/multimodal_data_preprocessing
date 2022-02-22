@@ -11,8 +11,13 @@
 import os.path
 
 import pandas as pd
+import glob
+import json
+import re
+import sys
 
-from prep_data import *
+# from prep_data import *
+from prep_data import SelfSplitPrep
 from utils.data_prep_helpers import (
     get_class_weights,
     get_gender_avgs,
@@ -52,7 +57,7 @@ def prep_lives_data(
     utts_name = f"transcript/lives_json_{transcription_type.lower()}.csv"
 
     # create instance of StandardPrep class
-    cdc_prep = SelfSplitPrep(
+    lives_prep = SelfSplitPrep(
         data_type="lives",
         data_path=data_path,
         feature_set=feature_set,
@@ -66,7 +71,7 @@ def prep_lives_data(
     )
 
     # get train, dev, test data
-    train_data, dev_data, test_data = cdc_prep.get_data_folds()
+    train_data, dev_data, test_data = lives_prep.get_data_folds()
 
     # get train ys
     if as_dict:
@@ -75,7 +80,7 @@ def prep_lives_data(
         train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
-    class_weights = cdc_prep.get_updated_class_weights(train_ys)
+    class_weights = lives_prep.get_updated_class_weights(train_ys)
 
     # # get a subset of the training data, if necessary
     if num_train_ex:
@@ -487,13 +492,6 @@ class TranscriptToCSV:
         """
         splitter = AudioSplit(base_path=base_path, audio_name=audio_name, save_ext="wav")
         splitter.split_audio_with_pandas(utt_df=utt_data)
-
-
-def get_lives_speakers(df):
-    # get lives speakers by combining the 'speaker' category with the 'sid' category
-    all_speakers = df[['speaker', 'sid']].agg('-'.join, axis=1)
-
-    return set(all_speakers.unique())
 
 
 if __name__ == "__main__":
