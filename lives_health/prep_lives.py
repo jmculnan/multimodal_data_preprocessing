@@ -467,7 +467,7 @@ class TranscriptToCSV:
 
 def get_lives_speakers(df):
     # get lives speakers by combining the 'speaker' category with the 'sid' category
-    all_speakers = df[['speaker', 'sid', ...]].agg('-'.join, axis=1)
+    all_speakers = df[['speaker', 'sid']].agg('-'.join, axis=1)
 
     return set(all_speakers.unique())
 

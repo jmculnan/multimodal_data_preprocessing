@@ -19,8 +19,9 @@ from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_meld,
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
-    combine_xs_and_ys_mosi,
+    combine_xs_and_ys_mosi, combine_xs_and_ys_lives,
 )
+from lives_health.prep_lives import get_lives_speakers
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
 from make_data_tensors_by_dataset import *
 
@@ -200,7 +201,12 @@ class SelfSplitPrep:
         self.fset = feature_set
 
         # read in data
-        self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+        if utterance_fname.endswith(".tsv"):
+            # most self-split data are TSV
+            self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+        else:
+            # lives data is CSV
+            self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}")
 
         # get dict of all speakers to use
         if (
@@ -211,6 +217,10 @@ class SelfSplitPrep:
             or data_type == "cmu-mosi"
         ):
             all_speakers = set(self.all_data["speaker"])
+            speaker2idx = get_speaker_to_index_dict(all_speakers)
+        elif data_type == "lives":
+            # lives data has a more complicated way of getting speaker
+            all_speakers = get_lives_speakers(self.all_data)
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
             speaker2idx = None
@@ -424,6 +434,17 @@ class DataPrep:
                 pred_type=self.pred_type,
                 as_dict=as_dict,
             )
+        elif self.d_type == "lives":
+            combined = combine_xs_and_ys_lives(
+                self.data_tensors,
+                self.acoustic_tensor,
+                self.acoustic_lengths,
+                self.acoustic_means,
+                self.acoustic_stdev,
+                speaker2idx,
+                pred_type=self.pred_type,
+                as_dict=as_dict
+            )
 
         return combined
 
@@ -589,6 +610,10 @@ class DataPrep:
             or self.d_type == "cmu-mosi"
         ):
             data_tensor_dict = make_data_tensors_mosi(
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
+            )
+        elif self.d_type == "lives":
+            data_tensor_dict = make_data_tensors_lives(
                 text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
 

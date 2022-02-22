@@ -70,7 +70,7 @@ def extract_acoustic_features(datasets_list, base_path, feature_set):
 
 if __name__ == "__main__":
 
-    datasets = ["meld", "firstimpr", "cdc", "mosi", "ravdess"]
+    datasets = ["firstimpr", "cdc", "mosi", "ravdess"]
     base_path = "../../datasets/multimodal_datasets"
 
     extract_acoustic_features(datasets, base_path, "spec")
