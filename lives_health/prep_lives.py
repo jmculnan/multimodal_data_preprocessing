@@ -25,7 +25,7 @@ from utils.data_prep_helpers import (
 from utils.audio_extraction import (
     extract_portions_of_mp4_or_wav,
     convert_to_wav,
-    run_feature_extraction,
+    run_feature_extraction, AudioSplit,
 )
 
 
@@ -84,7 +84,7 @@ def prep_lives_data(
     return train_data, dev_data, test_data, class_weights
 
 
-def preprocess_lives(corpus_path, flatten_data=False, json_data=True):
+def preprocess_lives(corpus_path, flatten_data=False, json_data=True, split_audio=False):
     """
     Preprocess the lives data files
     This requires extracting times from .trs files,
@@ -95,6 +95,8 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True):
         have wd alignment
     :param json_data: whether data is coming from json
         or trs files
+    :param split_audio: whether large audio files should
+        be split at utterance boundaries
     :return:
     """
     # counter for number of input items
@@ -112,6 +114,11 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True):
                 if flatten_data:
                     utt_data = csv_converter.convert_json(alignment="utt")
                     save_path = f"{fpath}/transcript/lives_json_gold.csv"
+
+                    # if you want to split audio by utterance, do so
+                    if split_audio:
+                        fname = fname.split(".json")[0]
+                        csv_converter.split_audio(utt_data, corpus_path, fname)
                 else:
                     utt_data = csv_converter.convert_json(alignment="word")
                     save_path = f"{fpath}/transcript/lives_json_gold_wordaligned.csv"
@@ -131,6 +138,11 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True):
 
                     # save this utterance-level data
                     save_path = f"{fpath}/transcript/lives_gold.csv"
+
+                    # if you want to split audio by utterance, do so
+                    if split_audio:
+                        fname = fname.split(".json")[0]
+                        csv_converter.split_audio(utt_data, corpus_path, fname)
                 else:
                     utt_data = csv_converter.convert_trs()
                     save_path = f"{fpath}/transcript/lives_gold_wordaligned.csv"
@@ -201,7 +213,7 @@ class TranscriptToCSV:
                     transcription = transcription.rename_axis('word_num').reset_index()
                     transcription["word_num"] += 1
 
-                    transcription["speaker"] = self._get_speaker_from_timestamp(transcription, spkr_timestamp_df)
+                    transcription["speaker"] = self.get_speaker_from_timestamp(transcription, spkr_timestamp_df)
                     transcription["sid"] = participant
                     transcription["recording_id"] = recording_id
 
@@ -287,28 +299,6 @@ class TranscriptToCSV:
 
         return json_arr
 
-    def _get_speaker_from_timestamp(self, word_level_df, speaker_timestamp_df):
-        """
-        Use the timestamp information on speakers to get speaker
-        :param word_level_df: a df containing word-level information
-        :param speaker_timestamp_df: a dataframe with speaker, start time, end time
-        :return:
-        """
-        # iterate over rows and get list of speakers from other df, then add as new column
-        speakers = []
-
-        # get all the speakers using the speaker timestamp df
-        for row in word_level_df.itertuples():
-            start_time = row.startTime
-            end_time = row.endTime
-
-            speaker = speaker_timestamp_df.loc[(speaker_timestamp_df['startTime'] <= start_time) &
-                                            (speaker_timestamp_df['endTime'] >= end_time)]['speaker'].values[0]
-
-            speakers.append(speaker)
-
-        return speakers
-
     def convert_trs(self):
         """
         Convert trs to a format that is usable in csv file
@@ -382,33 +372,6 @@ class TranscriptToCSV:
 
         return trs_arr
 
-    def flatten_data(self, word_level_data):
-        """
-        If data should be utterance, aligned, this collapses
-        it into one utterance per line
-        :return:
-        """
-
-        colnames = ['sid', 'recording_id', 'utt_num', 'speaker', 'timestart', 'timeend', 'utt']
-
-        all_utts = []
-
-        for i in (word_level_data['utt_num'].unique()):
-            utt = word_level_data.query(f'utt_num=={i}')
-
-            all_utts.append([utt['sid'].iloc[0],
-                             utt['recording_id'].iloc[0],
-                             i,
-                             utt['speaker'].iloc[0],
-                             utt['timestart'].iloc[0],
-                             utt['timeend'].iloc[-1],
-                             utt['word'].str.cat(sep=" ")
-                             ])
-
-        utt_level_data = pd.DataFrame(all_utts, columns=colnames)
-
-        return utt_level_data
-
     def get_speaker_timestamps(self, word_level_json):
         """
         Get timestamps with start and end of a speaker's speech
@@ -464,6 +427,67 @@ class TranscriptToCSV:
             # if csv does not exist, make it + include header
             data.to_csv(savepath, index=False)
 
+    def flatten_data(self, word_level_data):
+        """
+        If data should be utterance, aligned, this collapses
+        it into one utterance per line
+        :return:
+        """
+
+        colnames = ['sid', 'recording_id', 'utt_num', 'speaker', 'timestart', 'timeend', 'utt']
+
+        all_utts = []
+
+        for i in (word_level_data['utt_num'].unique()):
+            utt = word_level_data.query(f'utt_num=={i}')
+
+            all_utts.append([utt['sid'].iloc[0],
+                             utt['recording_id'].iloc[0],
+                             i,
+                             utt['speaker'].iloc[0],
+                             utt['timestart'].iloc[0],
+                             utt['timeend'].iloc[-1],
+                             utt['word'].str.cat(sep=" ")
+                             ])
+
+        utt_level_data = pd.DataFrame(all_utts, columns=colnames)
+
+        return utt_level_data
+
+    def get_speaker_from_timestamp(self, word_level_df, speaker_timestamp_df):
+        """
+        Use the timestamp information on speakers to get speaker
+        :param word_level_df: a df containing word-level information
+        :param speaker_timestamp_df: a dataframe with speaker, start time, end time
+        :return:
+        """
+        # iterate over rows and get list of speakers from other df, then add as new column
+        speakers = []
+
+        # get all the speakers using the speaker timestamp df
+        for row in word_level_df.itertuples():
+            start_time = row.startTime
+            end_time = row.endTime
+
+            speaker = speaker_timestamp_df.loc[(speaker_timestamp_df['startTime'] <= start_time) &
+                                            (speaker_timestamp_df['endTime'] >= end_time)]['speaker'].values[0]
+
+            speakers.append(speaker)
+
+        return speakers
+
+    def split_audio(self, utt_data, base_path, audio_name):
+        """
+        Take a large audio file and split it into small ones
+        Used to create utt-level acoustic data
+        :param utt_data:
+        :param base_path:
+        :param audio_name:
+        :return:
+        """
+        splitter = AudioSplit(base_path=base_path, audio_name=audio_name, save_ext="wav")
+        splitter.split_audio_with_pandas(utt_df=utt_data)
+
 
 def get_lives_speakers(df):
     # get lives speakers by combining the 'speaker' category with the 'sid' category
@@ -475,5 +499,5 @@ def get_lives_speakers(df):
 if __name__ == "__main__":
     cpath = "../../lives_test/done"
 
-    preprocess_lives(cpath, flatten_data=True, json_data=True)
+    preprocess_lives(cpath, flatten_data=True, json_data=True, split_audio=True)
     # preprocess_lives(cpath, flatten_data=False, json_data=True)
