@@ -3,6 +3,7 @@ from bert.prepare_bert_embeddings import DistilBertEmb, BertEmb
 
 import torch
 from torch import nn
+from tqdm import tqdm
 
 
 def make_data_tensors_meld(
@@ -38,7 +39,7 @@ def make_data_tensors_meld(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MELD"):
         # check if this item has acoustic data
         dia_num, utt_num = row["diaid_uttid"].split("_")[:2]
         if (dia_num, utt_num) in used_utts_list:
@@ -129,7 +130,7 @@ def make_data_tensors_mustard(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MUStARD"):
         # check if this is in the list
         if row["clip_id"] in used_utts_list:
 
@@ -223,7 +224,7 @@ def make_data_tensors_chalearn(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for FirstImpr"):
         # check if this item has acoustic data
         audio_name = row["file"].split(".mp4")[0]
         if audio_name in used_utts_list:
@@ -327,7 +328,7 @@ def make_data_tensors_cdc(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for CDC"):
         # check if this item has acoustic data
         audio_name = str(row["utt_num"])
 
@@ -412,7 +413,7 @@ def make_data_tensors_mosi(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MOSI"):
         if row["id"] in used_utts_list:
 
             # get audio id
@@ -493,7 +494,7 @@ def make_data_tensors_lives(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for LIvES"):
         if row["id"] in used_utts_list:
 
             # get audio id

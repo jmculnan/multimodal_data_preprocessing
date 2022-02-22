@@ -283,7 +283,7 @@ if __name__ == "__main__":
     base_path = "../../datasets/multimodal_datasets"
     cdc_path = f"{base_path}/Columbia_deception_corpus"
     mosi_path = f"{base_path}/CMU_MOSI"
-    firstimpr_path = f"{base_path}/Chalearn"
+    firstimpr_path = f"{base_path}/FirstImpr"
     meld_path = f"{base_path}/MELD_formatted"
     mustard_path = f"{base_path}/MUStARD"
     ravdess_path = f"{base_path}/RAVDESS_Speech"
@@ -308,10 +308,11 @@ if __name__ == "__main__":
     # emb_type = "distilbert"
     emb_type = "bert"
     dict_data = True
-    avg_feats = True
+    avg_feats = False
 
-    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["ravdess"]
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    datasets = ["firstimpr", "meld", "ravdess"]
+    # datasets = ["mustard"]
 
     # custom_feats_file = "combined_features_small.txt"
     custom_feats_file = None

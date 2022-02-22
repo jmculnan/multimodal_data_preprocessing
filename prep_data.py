@@ -13,6 +13,7 @@ import torch
 from sklearn.utils import compute_class_weight
 from torch import nn
 from torchtext.data import get_tokenizer
+from tqdm import tqdm
 
 from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_firstimpr,
@@ -280,7 +281,7 @@ class SelfSplitPrep:
         """
         labels = [int(y) for y in train_ys]
         classes = sorted(list(set(labels)))
-        weights = compute_class_weight("balanced", classes, labels)
+        weights = compute_class_weight("balanced", classes=classes, y=labels)
         return torch.tensor(weights, dtype=torch.float)
 
 
@@ -498,7 +499,7 @@ class DataPrep:
         ordered_acoustic_lengths = []
 
         # for all items with audio + gold label
-        for item in self.used_ids:
+        for item in tqdm(self.used_ids, desc=f"Preparing acoustic set for {self.d_type}"):
 
             # pull out the acoustic feats df
             acoustic_data = acoustic_dict[item]
@@ -677,7 +678,7 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     acoustic_lengths = {}
 
     # get the acoustic features files
-    for feats_file in glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"):
+    for feats_file in tqdm(glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"), desc=f"Loading acoustic feature files for {dataset}"):
         # read each file as a pandas df
         if use_cols is None or (
             len(use_cols) == 1
@@ -786,7 +787,7 @@ def make_spectrograms_dict(file_path, dataset):
     spec_lengths = {}
 
     # get the acoustic features files
-    for spec_file in glob.glob(f"{file_path}/spec/*.csv"):
+    for spec_file in tqdm(glob.glob(f"{file_path}/spec/*.csv"), desc=f"Loading spectrogram files for {dataset}"):
         # read each file as a pandas df
         spec = pd.read_csv(spec_file)
 

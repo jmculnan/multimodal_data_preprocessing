@@ -3,7 +3,7 @@ from utils.data_prep_helpers import Glove, make_glove_dict, get_data_samples
 
 
 def prep_firstimpr_data(
-    data_path="../../datasets/multimodal_datasets/chalearn",
+    data_path="../../datasets/multimodal_datasets/FirstImpr",
     feature_set="IS13",
     transcription_type="gold",
     embedding_type="distilbert",

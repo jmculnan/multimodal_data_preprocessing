@@ -55,7 +55,7 @@ def extract_acoustic_features(datasets_list, base_path, feature_set):
         elif dataset == "mosi" or dataset == "cmu-mosi":
             mosi_path = f"{base_path}/CMU_MOSI"
             run_feature_extraction(
-                f"{mosi_path}/Audio/WAV16000/Segmented",
+                f"{mosi_path}/Audio/WAV_16000/Segmented",
                 feature_set,
                 f"{mosi_path}/{feature_set}",
             )
@@ -70,7 +70,7 @@ def extract_acoustic_features(datasets_list, base_path, feature_set):
 
 if __name__ == "__main__":
 
-    datasets = ["firstimpr", "cdc", "mosi", "ravdess"]
+    datasets = ["mosi", "ravdess"]
     base_path = "../../datasets/multimodal_datasets"
 
     extract_acoustic_features(datasets, base_path, "spec")

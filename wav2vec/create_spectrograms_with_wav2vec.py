@@ -80,48 +80,10 @@ def plot_spectrogram(spec, title=None, ylabel='freq_bin', aspect='auto', xmax=No
 
 
 if __name__ == "__main__":
-    # the_files = "../../datasets/test_then_delete/MELD_formatted/train/train_audio_mono"
     the_files = "../../datasets/multimodal_datasets/MELD_formatted/train/train_audio_mono"
 
     max_size = None
 
     for f in os.listdir(the_files):
         if f.endswith(".wav"):
-
             get_and_save_spectrogram(the_files, f, "output/spectrograms", None)
-            #
-            # item = f
-            #
-            # waveform, sample_rate = get_speech_sample(f"{the_files}/{f}")
-            #
-            # n_fft = 1024
-            # win_length = None
-            # hop_length = 512
-            #
-            # # define transformation
-            # spectrogram = T.Spectrogram(
-            #     n_fft=n_fft,
-            #     win_length=win_length,
-            #     hop_length=hop_length,
-            #     center=True,
-            #     pad_mode="reflect",
-            #     power=2.0,
-            # )
-            #
-            # # Perform transformation
-            # spec = spectrogram(waveform)
-            #
-            # if max_size == None:
-            #     max_size = spec.shape
-            #     print(max_size)
-            # else:
-            #     if spec.shape > max_size:
-            #         max_size = spec.shape
-            #         print(f"{f}: {max_size}")
-            #
-            # # print(spec)
-            # # print(spec.shape)
-            # # plot_spectrogram(spec[0], title='torchaudio', save_name=f"spectrogram_{f}.png")
-            # # plot_spectrogram(spec[0], title='torchaudio')
-            #
-            #
