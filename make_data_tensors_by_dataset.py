@@ -3,6 +3,7 @@ from bert.prepare_bert_embeddings import DistilBertEmb, BertEmb
 
 import torch
 from torch import nn
+from tqdm import tqdm
 
 
 def make_data_tensors_meld(
@@ -38,7 +39,7 @@ def make_data_tensors_meld(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MELD"):
         # check if this item has acoustic data
         dia_num, utt_num = row["diaid_uttid"].split("_")[:2]
         if (dia_num, utt_num) in used_utts_list:
@@ -129,7 +130,7 @@ def make_data_tensors_mustard(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MUStARD"):
         # check if this is in the list
         if row["clip_id"] in used_utts_list:
 
@@ -223,7 +224,7 @@ def make_data_tensors_chalearn(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for FirstImpr"):
         # check if this item has acoustic data
         audio_name = row["file"].split(".mp4")[0]
         if audio_name in used_utts_list:
@@ -327,7 +328,7 @@ def make_data_tensors_cdc(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for CDC"):
         # check if this item has acoustic data
         audio_name = str(row["utt_num"])
 
@@ -412,7 +413,7 @@ def make_data_tensors_mosi(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in text_data.iterrows():
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MOSI"):
         if row["id"] in used_utts_list:
 
             # get audio id
@@ -454,6 +455,91 @@ def make_data_tensors_mosi(
 
     # create pytorch tensors for each
     all_data["all_sentiments"] = torch.tensor(all_data["all_sentiments"])
+
+    # pad and transpose utterance sequences
+    all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])
+    all_data["all_utts"] = all_data["all_utts"].transpose(0, 1)
+
+    # return data
+    return all_data
+
+
+def make_data_tensors_lives(
+    text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"
+):
+    """
+    Make the data tensors for lives
+    :param text_data: a pandas df containing text and gold
+    :param used_utts_list: the list of all utts with acoustic data
+    :param longest_utt: length of longest utt
+    :param tokenizer: a tokenizer
+    :param glove: an instance of class Glove
+    :return: a dict containing tensors for utts, speakers, ys,
+        and utterance lengths
+    todo: background info + gold labels will NOT be included in these tensors
+        it will be incorporated by being queried from separate location
+        when these items are called during training and testing of models
+    """
+    # create holders for the data
+    all_data = {
+        "all_utts": [],
+        "all_speakers": [],
+        "all_audio_ids": [],
+        "utt_lengths": [],
+        "all_recording_ids": [],
+        "all_utt_nums": [],
+    }
+
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    else:
+        emb_maker = DistilBertEmb()
+
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for LIvES"):
+        # if f"{row['recording_id']}_{row['utt_num']}" in used_utts_list:
+        if f"{row['recording_id']}_utt{row['utt_num']}_speaker{row['speaker']}" in used_utts_list:
+        # if row["id"] in used_utts_list:
+
+            # get audio id
+            all_data["all_audio_ids"].append(f"{row['recording_id']}_utt{row['utt_num']}_speaker{row['speaker']}")
+
+            if glove is not None:
+                # create utterance-level holders
+                utts = [0] * longest_utt
+
+                # get values from row
+                utt = tokenizer(clean_up_word(str(row["utterance"])))
+                all_data["utt_lengths"].append(len(utt))
+
+                # convert words to indices for glove
+                utt_indexed = glove.index(utt)
+                for i, item in enumerate(utt_indexed):
+                    utts[i] = item
+
+                all_data["all_utts"].append(torch.tensor(utts))
+            else:
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
+
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                all_data["utt_lengths"].append(len(ids))
+
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
+
+                all_data["all_utts"].append(utt_embs)
+
+            spk_id = f"{row['speaker']}-{row['sid']}"
+
+            recording_id = row['recording_id']
+            utt_num = row['utt_num']
+
+            all_data["all_speakers"].append(spk_id)
+            all_data["all_recording_ids"].append(recording_id)
+            all_data["all_utt_nums"].append(utt_num)
 
     # pad and transpose utterance sequences
     all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])

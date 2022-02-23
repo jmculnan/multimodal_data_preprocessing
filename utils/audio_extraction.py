@@ -7,8 +7,11 @@ import os, sys
 import json, re
 from pprint import pprint
 import subprocess as sp
+from tqdm import tqdm
 
 import pandas as pd
+
+from wav2vec.create_spectrograms_with_wav2vec import get_and_save_spectrogram
 
 
 class TRSToCSV:
@@ -117,88 +120,136 @@ class ExtractAudio:
 
 
 class AudioSplit:
-    """Takes audio, can split and join using ffmpeg"""
+    """ Takes audio, can split and join using ffmpeg"""
+    def __init__(self, base_path, audio_name, save_ext=None):
+        self.path = base_path,
+        self.fname = audio_name
+        if not audio_name.endswith(".wav"):
+            self.fpath = f"{base_path}/{audio_name}.wav"
+        else:
+            self.fpath = f"{base_path}/{audio_name}"
 
-    def __init__(self, path, pathext, audio_name, diarized_csv):
-        self.path = path
-        self.aname = audio_name
-        self.cname = diarized_csv
-        self.afile = f"{path}/{audio_name}"
-        self.cfile = f"{path}/{diarized_csv}"
-        self.ext = pathext
-        self.full_path = f"{path}/{pathext}"
+        if save_ext is not None:
+            self.savepath = f"{base_path}/{save_ext}"
+        else:
+            self.savepath = base_path
 
-    def split_audio(self):
+    def split_audio_with_pandas(self, utt_df):
         """
-        Splits audio based on an input csvfile.
-        csvfile is assumed to start with the following format:
-          speaker,timestart,timeend where
-          speaker   = caller or patient
-          timestart = time of start of turn
-          timeend   = time of turn end
+        Split audio file based on input pandas df
+        Df contains columns ['speaker'], ['startTime'], ['endTime']
+        :return:
         """
 
-        os.makedirs(self.full_path, exist_ok=True)
+        os.makedirs(self.savepath, exist_ok=True)
 
-        with open(self.cfile, "r") as csvfile:
-            for n, line in enumerate(csvfile):
-                speaker, timestart, timeend = line.strip().split(",")[:3]
-                os.makedirs(f"{self.full_path}/{speaker}", exist_ok=True)
-                sp.run(
-                    [
-                        "ffmpeg",
-                        "-i",
-                        self.afile,
-                        "-ss",
-                        str(timestart),
-                        "-to",
-                        str(timeend),
-                        f"{self.full_path}/{speaker}/{n}",
-                        "-loglevel",
-                        "quiet",
-                    ]
-                )
-                # Consider using a tqdm progress bar here - Adarsh
-                if n % 1000 == 0:
-                    print(f"Completed {n + 1} lines")
+        for row in tqdm(utt_df.itertuples(), total=len(utt_df)):
+            # print(row)
+            speaker = row.speaker
+            recording_id = row.recording_id
+            utt_num = row.utt_num
+            timestart = row.timestart
+            timeend = row.timeend
 
-    def make_textfile(self, audiodir, speaker):
-        """
-        Make a .txt file containing the names of all audio in the directory
-        Used for ffmpeg concatenation
-        """
-        txtfilepath = f"{self.full_path}/{speaker}/{self.ext}-{speaker}.txt"
-        with open(txtfilepath, "w") as txtfile:
-            for item in os.listdir(audiodir):
-                if item[-4:] == ".wav":
-                    txtfile.write(f"file '{item}'\n")
+            sp.run(
+                [
+                    "ffmpeg",
+                    "-i",
+                    self.fpath,
+                    "-ss",
+                    str(timestart),
+                    "-to",
+                    str(timeend),
+                    f"{self.savepath}/{recording_id}_utt{utt_num}_speaker{speaker}.wav",
+                    "-loglevel",
+                    "quiet",
+                ]
+            )
 
-    def join_audio(self, txtfile, speaker):
-        """
-        Joins audio in an input directory using a textfile with path info
-        """
-        os.makedirs(f"{self.path}/output", exist_ok=True)
 
-        outputname = f"{self.ext}-{speaker}.wav"
-
-        sp.run(
-            [
-                "ffmpeg",
-                "-f",
-                "concat",
-                "-safe",
-                "0",
-                "-i",
-                f"{self.full_path}/{speaker}/{txtfile}",
-                "-c",
-                "copy",
-                f"{self.path}/output/{outputname}",
-                "-loglevel",
-                "quiet",
-            ]
-        )
-        print(f"Concatenation completed for {self.full_path}")
-
+# class AudioSplit:
+#     """Takes audio, can split and join using ffmpeg"""
+#
+#     def __init__(self, path, pathext, audio_name, diarized_csv):
+#         self.path = path
+#         self.aname = audio_name
+#         self.cname = diarized_csv
+#         self.afile = f"{path}/{audio_name}"
+#         self.cfile = f"{path}/{diarized_csv}"
+#         self.ext = pathext
+#         self.full_path = f"{path}/{pathext}"
+#
+#     def split_audio(self):
+#         """
+#         Splits audio based on an input csvfile.
+#         csvfile is assumed to start with the following format:
+#           speaker,timestart,timeend where
+#           speaker   = caller or patient
+#           timestart = time of start of turn
+#           timeend   = time of turn end
+#         """
+#
+#         os.makedirs(self.full_path, exist_ok=True)
+#
+#         with open(self.cfile, "r") as csvfile:
+#             for n, line in enumerate(csvfile):
+#                 speaker, timestart, timeend = line.strip().split(",")[:3]
+#                 os.makedirs(f"{self.full_path}/{speaker}", exist_ok=True)
+#                 sp.run(
+#                     [
+#                         "ffmpeg",
+#                         "-i",
+#                         self.afile,
+#                         "-ss",
+#                         str(timestart),
+#                         "-to",
+#                         str(timeend),
+#                         f"{self.full_path}/{speaker}/{n}",
+#                         "-loglevel",
+#                         "quiet",
+#                     ]
+#                 )
+#                 # Consider using a tqdm progress bar here - Adarsh
+#                 if n % 1000 == 0:
+#                     print(f"Completed {n + 1} lines")
+#
+#     def make_textfile(self, audiodir, speaker):
+#         """
+#         Make a .txt file containing the names of all audio in the directory
+#         Used for ffmpeg concatenation
+#         """
+#         txtfilepath = f"{self.full_path}/{speaker}/{self.ext}-{speaker}.txt"
+#         with open(txtfilepath, "w") as txtfile:
+#             for item in os.listdir(audiodir):
+#                 if item[-4:] == ".wav":
+#                     txtfile.write(f"file '{item}'\n")
+#
+#     def join_audio(self, txtfile, speaker):
+#         """
+#         Joins audio in an input directory using a textfile with path info
+#         """
+#         os.makedirs(f"{self.path}/output", exist_ok=True)
+#
+#         outputname = f"{self.ext}-{speaker}.wav"
+#
+#         sp.run(
+#             [
+#                 "ffmpeg",
+#                 "-f",
+#                 "concat",
+#                 "-safe",
+#                 "0",
+#                 "-i",
+#                 f"{self.full_path}/{speaker}/{txtfile}",
+#                 "-c",
+#                 "copy",
+#                 f"{self.path}/output/{outputname}",
+#                 "-loglevel",
+#                 "quiet",
+#             ]
+#         )
+#         print(f"Concatenation completed for {self.full_path}")
+#
 
 class GetFeatures:
     """
@@ -243,20 +294,47 @@ class GetFeatures:
         return feature_set
 
 
+# def run_feature_extraction(audio_path, feature_set, save_dir):
+#     """
+#     Run feature extraction from audio_extraction.py for a dataset
+#     """
+#     # make sure the full save path exists; if not, create it
+#     os.system(f'if [ ! -d "{save_dir}" ]; then mkdir -p {save_dir}; fi')
+#
+#     # save all files in the directory
+#     for wfile in os.listdir(audio_path):
+#         save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
+#         audio_extractor = ExtractAudio(
+#             audio_path, wfile, save_dir, "../../opensmile-3.0"
+#         )
+#         audio_extractor.save_acoustic_csv(feature_set, save_name)
+
+
 def run_feature_extraction(audio_path, feature_set, save_dir):
     """
     Run feature extraction from audio_extraction.py for a dataset
+    :param audio_path: the full path to the directory containing audio files
+    :param feature_set: the feature set used;
+        For openSMILE, the feature set is one of IS09-IS13
+        For spectrograms, feature set is `spectrogram` or `spec`
+        For ASR-preprocessed feats, feature set is `asr` or `wav2vec`
     """
     # make sure the full save path exists; if not, create it
     os.system(f'if [ ! -d "{save_dir}" ]; then mkdir -p {save_dir}; fi')
 
     # save all files in the directory
-    for wfile in os.listdir(audio_path):
-        save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
-        audio_extractor = ExtractAudio(
-            audio_path, wfile, save_dir, "../../opensmile-3.0"
-        )
-        audio_extractor.save_acoustic_csv(feature_set, save_name)
+    for wfile in tqdm(os.listdir(audio_path), desc=f"Processing files in {audio_path}"):
+        if wfile.endswith(".wav"):
+            save_name = str(wfile.split(".wav")[0]) + f"_{feature_set}.csv"
+            if feature_set.lower() in ["is09", "is10", "is11", "is12", "is13"]:
+                audio_extractor = ExtractAudio(
+                    audio_path, wfile, save_dir, "../../opensmile-3.0"
+                )
+                audio_extractor.save_acoustic_csv(feature_set, save_name)
+            elif feature_set.lower() in ["spectrogram", "spec"]:
+                get_and_save_spectrogram(audio_path, wfile, save_dir, resample=None)
+            elif feature_set.lower() in ["asr", "wav2vec"]:
+                pass
 
 
 def transform_audio(txtfile):

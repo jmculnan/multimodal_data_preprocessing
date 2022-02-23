@@ -13,14 +13,16 @@ import torch
 from sklearn.utils import compute_class_weight
 from torch import nn
 from torchtext.data import get_tokenizer
+from tqdm import tqdm
 
 from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_firstimpr,
     combine_xs_and_ys_meld,
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
-    combine_xs_and_ys_mosi,
+    combine_xs_and_ys_mosi, combine_xs_and_ys_lives,
 )
+
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
 from make_data_tensors_by_dataset import *
 
@@ -182,6 +184,7 @@ class SelfSplitPrep:
         avg_acoustic_data=False,
         custom_feats_file=None,
         bert_type="distilbert",
+        include_spectrograms=False
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -199,7 +202,12 @@ class SelfSplitPrep:
         self.fset = feature_set
 
         # read in data
-        self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+        if utterance_fname.endswith(".tsv"):
+            # most self-split data are TSV
+            self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}", sep="\t")
+        else:
+            # lives data is CSV
+            self.all_data = pd.read_csv(f"{self.path}/{utterance_fname}")
 
         # get dict of all speakers to use
         if (
@@ -210,6 +218,10 @@ class SelfSplitPrep:
             or data_type == "cmu-mosi"
         ):
             all_speakers = set(self.all_data["speaker"])
+            speaker2idx = get_speaker_to_index_dict(all_speakers)
+        elif data_type == "lives":
+            # lives data has a more complicated way of getting speaker
+            all_speakers = get_lives_speakers(self.all_data)
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
             speaker2idx = None
@@ -246,6 +258,7 @@ class SelfSplitPrep:
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             bert_type=bert_type,
+            include_spectrograms=include_spectrograms
         )
 
         # add pred type if needed (currently just mosi)
@@ -268,7 +281,7 @@ class SelfSplitPrep:
         """
         labels = [int(y) for y in train_ys]
         classes = sorted(list(set(labels)))
-        weights = compute_class_weight("balanced", classes, labels)
+        weights = compute_class_weight("balanced", classes=classes, y=labels)
         return torch.tensor(weights, dtype=torch.float)
 
 
@@ -293,6 +306,7 @@ class DataPrep:
         add_avging=False,
         custom_feats_file=None,
         bert_type="distilbert",
+        include_spectrograms=False
     ):
         # set data type
         self.d_type = data_type
@@ -312,6 +326,9 @@ class DataPrep:
             ) = make_acoustic_dict_with_custom_features(
                 data_path, custom_feats_file, data_type, acoustic_cols_used
             )
+
+        if include_spectrograms:
+            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
 
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
@@ -418,6 +435,16 @@ class DataPrep:
                 pred_type=self.pred_type,
                 as_dict=as_dict,
             )
+        elif self.d_type == "lives":
+            combined = combine_xs_and_ys_lives(
+                self.data_tensors,
+                self.acoustic_tensor,
+                self.acoustic_lengths,
+                self.acoustic_means,
+                self.acoustic_stdev,
+                speaker2idx,
+                as_dict=as_dict
+            )
 
         return combined
 
@@ -444,6 +471,10 @@ class DataPrep:
             or self.d_type == "cmu_mosi"
         ):
             valid_ids = text_data["id"].tolist()
+        elif self.d_type == "lives":
+            text_data['utt_num'] = text_data['utt_num'].astype(str)
+            valid_ids = text_data.agg(lambda x: f"{x['recording_id']}_utt{x['utt_num']}_speaker{x['speaker']}", axis=1)
+            # valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -471,7 +502,7 @@ class DataPrep:
         ordered_acoustic_lengths = []
 
         # for all items with audio + gold label
-        for item in self.used_ids:
+        for item in tqdm(self.used_ids, desc=f"Preparing acoustic set for {self.d_type}"):
 
             # pull out the acoustic feats df
             acoustic_data = acoustic_dict[item]
@@ -494,6 +525,51 @@ class DataPrep:
 
         # delete acoustic dict to save space
         del acoustic_dict
+
+        # pad the sequence and reshape it to proper format
+        # this is here to keep the formatting for acoustic RNN
+        all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
+        all_acoustic = all_acoustic.transpose(0, 1)
+        all_acoustic = all_acoustic.float()
+        # all_acoustic = all_acoustic.type(torch.FloatTensor)
+
+        print(f"Acoustic set made at {datetime.datetime.now()}")
+
+        return all_acoustic, ordered_acoustic_lengths
+
+    def make_spectrogram_set(
+        self,
+        spec_dict,
+        spec_lengths_dict,
+        longest_spec=1500
+    ):
+        """
+        Prepare the spectrogram data
+        :param spec_dict: a dict of acoustic feat dfs
+        :param spec_lengths_dict: a dict of lengths of spectrograms
+        :param longest_spec: the longest allowed spec df
+        :return:
+        """
+
+        # set holders for acoustic data
+        all_spec = []
+        ordered_spec_lengths = []
+
+        # for all items with audio + gold label
+        for item in self.used_ids:
+
+            # pull out the acoustic feats df
+            acoustic_data = spec_dict[item]
+            ordered_spec_lengths.append(spec_lengths_dict[item])
+
+            spec_data = spec_data[spec_data.index <= longest_spec]
+            acoustic_holder = torch.tensor(acoustic_data.values)
+
+            # add features as tensor to acoustic data
+            all_spec.append(acoustic_holder)
+
+        # delete acoustic dict to save space
+        del spec_dict
 
         # pad the sequence and reshape it to proper format
         # this is here to keep the formatting for acoustic RNN
@@ -538,6 +614,10 @@ class DataPrep:
             or self.d_type == "cmu-mosi"
         ):
             data_tensor_dict = make_data_tensors_mosi(
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
+            )
+        elif self.d_type == "lives":
+            data_tensor_dict = make_data_tensors_lives(
                 text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
 
@@ -585,6 +665,14 @@ def get_paths(data_type, data_path):
     return train, dev, test
 
 
+def get_lives_speakers(df):
+    # get lives speakers by combining the 'speaker' category with the 'sid' category
+    df['speaker'] = df['speaker'].astype(str)
+    all_speakers = df[['speaker', 'sid']].agg('-'.join, axis=1)
+
+    return set(all_speakers.unique())
+
+
 def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     """
     Use the path to get a dict of unique_id : data pairs
@@ -601,7 +689,7 @@ def make_acoustic_dict(file_path, dataset, feature_set, use_cols=None):
     acoustic_lengths = {}
 
     # get the acoustic features files
-    for feats_file in glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"):
+    for feats_file in tqdm(glob.glob(f"{file_path}/{feature_set}/*_{feature_set}.csv"), desc=f"Loading acoustic feature files for {dataset}"):
         # read each file as a pandas df
         if use_cols is None or (
             len(use_cols) == 1
@@ -694,6 +782,49 @@ def make_acoustic_dict_with_custom_features(
 
     # return
     return acoustic_dict, acoustic_lengths
+
+
+def make_spectrograms_dict(file_path, dataset):
+    """
+    Make a dict of spectrograms to include in data
+    Uses pre-saved spectrogram CSV files
+    :param file_path: the path to the file containing all features for this dataset
+    :param dataset: the name of the dataset
+    :return: a dict of spectograms, dict of length of each spectrogram
+    """
+    print(f"Starting spectrogram dict at {datetime.datetime.now()}")
+
+    spec_dict = {}
+    spec_lengths = {}
+
+    # get the acoustic features files
+    for spec_file in tqdm(glob.glob(f"{file_path}/spec/*.csv"), desc=f"Loading spectrogram files for {dataset}"):
+        # read each file as a pandas df
+        spec = pd.read_csv(spec_file)
+
+        # get the id
+        feats_file_name = spec_file.split("/")[-1]
+
+        if dataset == "meld":
+            dia_id, utt_id = feats_file_name.split("_")[:2]
+            id = (dia_id, utt_id)
+        elif dataset == "cdc":
+            id = feats_file_name.split("_")[1]
+        else:
+            id = feats_file_name.split(".csv")[0]
+
+        # save the dataframe to a dict with id as key
+        if spec.shape[0] > 0:
+            spec_dict[id] = spec
+            # do this so we can ensure same order of lengths and feats
+            spec_lengths[id] = spec.shape[0]
+
+        # delete the features df bc it takes up lots of space
+        del spec
+
+    print(f"Acoustic dict made at {datetime.datetime.now()}")
+    print(f"Len of dict: {len(spec_dict.keys())}")
+    return spec_dict, spec_lengths
 
 
 def get_distilbert_tokenizer():

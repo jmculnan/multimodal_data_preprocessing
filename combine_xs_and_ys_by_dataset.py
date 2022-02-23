@@ -9,6 +9,8 @@ def combine_xs_and_ys_meld(
     acoustic_lengths,
     acoustic_means,
     acoustic_stdev,
+    spec_data=None,
+    spec_lengths=None,
     as_dict=False,
 ):
     """
@@ -24,6 +26,7 @@ def combine_xs_and_ys_meld(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
                     "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                     "x_speaker": data_dict["all_speakers"][i].clone().detach(),
                     "x_gender": 0,
                     "ys": [
@@ -33,6 +36,7 @@ def combine_xs_and_ys_meld(
                     "audio_id": data_dict["all_audio_ids"][i],
                     "utt_length": data_dict["utt_lengths"][i],
                     "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0,
                 }
             )
     else:
@@ -48,6 +52,8 @@ def combine_xs_and_ys_meld(
                     0,  # fixme: genders temporarily removed
                     data_dict["all_emotions"][i].clone().detach(),
                     data_dict["all_sentiments"][i].clone().detach(),
+                    spec_data[i].clone().detach() if spec_data else 0,
+                    spec_lengths[i] if spec_lengths else 0,
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -65,6 +71,8 @@ def combine_xs_and_ys_mustard(
     acoustic_stdev,
     speaker2idx,
     as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -80,12 +88,14 @@ def combine_xs_and_ys_mustard(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
                     "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                     "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                     "x_gender": 0,  # fixme: genders temporarily removed
                     "ys": [data_dict["all_sarcasm"][i].clone().detach()],
                     "audio_id": data_dict["all_audio_ids"][i],
                     "utt_length": data_dict["utt_lengths"][i],
                     "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0
                 }
             )
     else:
@@ -100,6 +110,8 @@ def combine_xs_and_ys_mustard(
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # fixme: genders temporarily removed
                     data_dict["all_sarcasm"][i].clone().detach(),
+                    spec_data[i].clone().detach() if spec_data else 0,
+                    spec_lengths[i] if spec_lengths else 0,
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -117,6 +129,8 @@ def combine_xs_and_ys_firstimpr(
     acoustic_stdev,
     pred_type,
     as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -133,6 +147,7 @@ def combine_xs_and_ys_firstimpr(
                     {
                         "x_acoustic": item_transformed.clone().detach(),
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
+                        "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                         "x_speaker": 0,  # todo: eventually add speaker ?
                         "x_gender": data_dict["all_genders"][i].clone().detach(),
                         "x_ethnicity": data_dict["all_ethnicities"][i].clone().detach(),
@@ -147,6 +162,7 @@ def combine_xs_and_ys_firstimpr(
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
+                        "spec_length": spec_lengths[i] if spec_lengths else 0,
                     }
                 )
             else:
@@ -162,6 +178,7 @@ def combine_xs_and_ys_firstimpr(
                     {
                         "x_acoustic": item_transformed.clone().detach(),
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
+                        "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                         "x_speaker": 0,  # todo: eventually add speaker ?
                         "x_gender": data_dict["all_genders"][i].clone().detach(),
                         "ys": [torch.tensor(item_y)],
@@ -169,6 +186,7 @@ def combine_xs_and_ys_firstimpr(
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
+                        "spec_length": spec_lengths[i] if spec_lengths else 0,
                     }
                 )
 
@@ -191,6 +209,8 @@ def combine_xs_and_ys_firstimpr(
                         data_dict["all_openness"][i].clone().detach(),
                         data_dict["all_conscientiousness"][i].clone().detach(),
                         data_dict["all_interview"][i].clone().detach(),
+                        spec_data[i].clone().detach() if spec_data else 0,
+                        spec_lengths[i] if spec_lengths else 0,
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
@@ -213,6 +233,8 @@ def combine_xs_and_ys_firstimpr(
                         data_dict["all_genders"][i].clone().detach(),
                         torch.tensor(item_y),
                         data_dict["all_ethnicities"][i].clone().detach(),
+                        spec_data[i].clone().detach() if spec_data else 0,
+                        spec_lengths[i] if spec_lengths else 0,
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
@@ -230,6 +252,8 @@ def combine_xs_and_ys_cdc(
     acoustic_stdev,
     speaker2idx,
     as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -245,12 +269,14 @@ def combine_xs_and_ys_cdc(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
                     "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                     "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                     "x_gender": 0,  # todo: add gender later?
                     "ys": [data_dict["all_truth_values"][i].clone().detach()],
                     "audio_id": data_dict["all_audio_ids"][i],
                     "utt_length": data_dict["utt_lengths"][i],
                     "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0,
                 }
             )
 
@@ -266,6 +292,8 @@ def combine_xs_and_ys_cdc(
                     speaker2idx[data_dict["all_speakers"][i]],
                     0,  # todo: add gender later?
                     data_dict["all_truth_values"][i].clone().detach(),
+                    spec_data[i].clone().detach() if spec_data else 0,
+                    spec_lengths[i] if spec_lengths else 0,
                     data_dict["all_audio_ids"][i],
                     data_dict["utt_lengths"][i],
                     acoustic_lengths[i],
@@ -284,6 +312,8 @@ def combine_xs_and_ys_mosi(
     speaker2idx,
     pred_type,
     as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
 ):
     """
     Combine all x and y data into list of tuples for easier access with DataLoader
@@ -301,12 +331,14 @@ def combine_xs_and_ys_mosi(
                     {
                         "x_acoustic": item_transformed.clone().detach(),
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
+                        "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                         "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                         "x_gender": 0,  # todo: add gender later?
                         "ys": [data_dict["all_sentiments"][i].clone().detach()],
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
+                        "spec_length": spec_lengths[i] if spec_lengths else 0,
                     }
                 )
         # to do a 7-class classification
@@ -320,6 +352,7 @@ def combine_xs_and_ys_mosi(
                     {
                         "x_acoustic": item_transformed.clone().detach(),
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
+                        "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                         "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                         "x_gender": 0,  # todo: add gender later?
                         "ys": [
@@ -330,6 +363,7 @@ def combine_xs_and_ys_mosi(
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
+                        "spec_length": spec_lengths[i] if spec_lengths else 0,
                     }
                 )
         # to do a 3-class classification
@@ -348,12 +382,14 @@ def combine_xs_and_ys_mosi(
                     {
                         "x_acoustic": item_transformed.clone().detach(),
                         "x_utt": data_dict["all_utts"][i].clone().detach(),
+                        "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                         "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
                         "x_gender": 0,  # todo: add gender later?
                         "ys": [torch.tensor(sentiment_val)],
                         "audio_id": data_dict["all_audio_ids"][i],
                         "utt_length": data_dict["utt_lengths"][i],
                         "acoustic_length": acoustic_lengths[i],
+                        "spec_length": spec_lengths[i] if spec_lengths else 0,
                     }
                 )
 
@@ -371,6 +407,8 @@ def combine_xs_and_ys_mosi(
                         speaker2idx[data_dict["all_speakers"][i]],
                         0,  # todo: add gender later?
                         data_dict["all_sentiments"][i].clone().detach(),
+                        spec_data[i].clone().detach() if spec_data else 0,
+                        spec_lengths[i] if spec_lengths else 0,
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
@@ -392,6 +430,8 @@ def combine_xs_and_ys_mosi(
                         torch.tensor(
                             sent2score[round(data_dict["all_sentiments"][i].item())]
                         ),
+                        spec_data[i].clone().detach() if spec_data else 0,
+                        spec_lengths[i] if spec_lengths else 0,
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
@@ -416,9 +456,53 @@ def combine_xs_and_ys_mosi(
                         speaker2idx[data_dict["all_speakers"][i]],
                         0,  # todo: add gender later?
                         torch.tensor(sentiment_val),
+                        spec_data[i].clone().detach() if spec_data else 0,
+                        spec_lengths[i] if spec_lengths else 0,
                         data_dict["all_audio_ids"][i],
                         data_dict["utt_lengths"][i],
                         acoustic_lengths[i],
                     )
                 )
+    return data
+
+
+def combine_xs_and_ys_lives(
+    data_dict,
+    acoustic_data,
+    acoustic_lengths,
+    acoustic_means,
+    acoustic_stdev,
+    speaker2idx,
+    as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
+):
+    """
+    Combine all x and y data into list of tuples for easier access with DataLoader
+    """
+    data = []
+
+    if as_dict:
+        for i, item in enumerate(acoustic_data):
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
+            data.append(
+                {
+                    "x_acoustic": item_transformed.clone().detach(),
+                    "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
+                    "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
+                    "x_gender": 0,
+                    "audio_id": data_dict["all_audio_ids"][i],
+                    "recording_id": data_dict["all_recording_ids"][i],
+                    "utt_length": data_dict["utt_lengths"][i],
+                    "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0,
+                }
+            )
+    else:
+        # to keep the numbers as they are
+        exit("LIvES data can only be used in dict format")
+
     return data

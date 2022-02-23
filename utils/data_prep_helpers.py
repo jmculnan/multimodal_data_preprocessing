@@ -421,7 +421,7 @@ def get_class_weights(data_tensors_dict, data_type):
 
     labels = [int(y) for y in y_tensor]
     classes = sorted(list(set(labels)))
-    weights = compute_class_weight("balanced", classes, labels)
+    weights = compute_class_weight("balanced", classes=classes, y=labels)
     return torch.tensor(weights, dtype=torch.float)
 
 
