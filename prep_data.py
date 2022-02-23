@@ -59,6 +59,7 @@ class StandardPrep:
         avg_acoustic_data=False,
         custom_feats_file=None,
         bert_type="distilbert",
+        include_spectrograms=False,
     ):
         # set path to data files
         self.d_type = data_type.lower()
@@ -123,6 +124,7 @@ class StandardPrep:
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             bert_type=bert_type,
+            include_spectrograms=include_spectrograms
         )
 
         self.dev_prep = DataPrep(
@@ -139,6 +141,7 @@ class StandardPrep:
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             bert_type=bert_type,
+            include_spectrograms=include_spectrograms
         )
         self.dev_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -158,6 +161,7 @@ class StandardPrep:
             add_avging=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             bert_type=bert_type,
+            include_spectrograms=include_spectrograms
         )
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
@@ -327,11 +331,15 @@ class DataPrep:
                 data_path, custom_feats_file, data_type, acoustic_cols_used
             )
 
-        if include_spectrograms:
-            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
-
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
+
+        if include_spectrograms:
+            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
+            self.spec_set, self.spec_lengths_list = self.make_spectrogram_set(self.spec_dict, self.spec_lengths_dict)
+        else:
+            self.spec_set = None
+            self.spec_lengths_list = None
 
         # get acoustic set for train, dev, test partitions
         self.acoustic_tensor, self.acoustic_lengths = self.make_acoustic_set(
@@ -389,6 +397,8 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
         elif self.d_type == "mustard":
             combined = combine_xs_and_ys_mustard(
@@ -399,6 +409,8 @@ class DataPrep:
                 self.acoustic_stdev,
                 speaker2idx,
                 as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
         elif self.d_type == "chalearn" or self.d_type == "firstimpr":
             combined = combine_xs_and_ys_firstimpr(
@@ -409,6 +421,8 @@ class DataPrep:
                 self.acoustic_stdev,
                 pred_type=self.pred_type,
                 as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
         elif self.d_type == "cdc":
             combined = combine_xs_and_ys_cdc(
@@ -419,6 +433,8 @@ class DataPrep:
                 self.acoustic_stdev,
                 speaker2idx,
                 as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
         elif (
             self.d_type == "mosi"
@@ -434,6 +450,8 @@ class DataPrep:
                 speaker2idx,
                 pred_type=self.pred_type,
                 as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
         elif self.d_type == "lives":
             combined = combine_xs_and_ys_lives(
@@ -443,7 +461,9 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
-                as_dict=as_dict
+                as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
             )
 
         return combined
@@ -556,31 +576,31 @@ class DataPrep:
         ordered_spec_lengths = []
 
         # for all items with audio + gold label
-        for item in self.used_ids:
+        for item in tqdm(self.used_ids, desc=f"Preparing spec set for {self.d_type}"):
 
-            # pull out the acoustic feats df
-            acoustic_data = spec_dict[item]
+            # pull out the spec feats df
+            spec_data = spec_dict[item]
             ordered_spec_lengths.append(spec_lengths_dict[item])
 
             spec_data = spec_data[spec_data.index <= longest_spec]
-            acoustic_holder = torch.tensor(acoustic_data.values)
+            spec_holder = torch.tensor(spec_data.values)
 
             # add features as tensor to acoustic data
-            all_spec.append(acoustic_holder)
+            all_spec.append(spec_holder)
 
         # delete acoustic dict to save space
         del spec_dict
 
         # pad the sequence and reshape it to proper format
         # this is here to keep the formatting for acoustic RNN
-        all_acoustic = nn.utils.rnn.pad_sequence(all_acoustic)
-        all_acoustic = all_acoustic.transpose(0, 1)
-        all_acoustic = all_acoustic.float()
+        # all_spec = nn.utils.rnn.pad_sequence(all_spec)
+        # all_acoustic = all_acoustic.transpose(0, 1)
+        # all_acoustic = all_acoustic.float()
         # all_acoustic = all_acoustic.type(torch.FloatTensor)
 
         print(f"Acoustic set made at {datetime.datetime.now()}")
 
-        return all_acoustic, ordered_acoustic_lengths
+        return all_spec, ordered_spec_lengths
 
     def make_data_tensors(
         self, text_data, longest_utt, glove=None, bert_type="distilbert"

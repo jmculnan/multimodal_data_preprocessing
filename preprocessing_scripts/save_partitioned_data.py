@@ -29,6 +29,7 @@ def save_partitioned_data(
     custom_feats_file=None,
     selected_ids=None,
     num_train_ex=None,
+    include_spectrograms=False,
 ):
     """
     Save partitioned data in pickled format
@@ -64,6 +65,7 @@ def save_partitioned_data(
         custom_feats_file,
         selected_ids=selected_ids,
         num_train_ex=num_train_ex,
+        include_spectrograms=include_spectrograms
     )
 
     # use custom feats set instead of ISXX in save name
@@ -76,62 +78,27 @@ def save_partitioned_data(
     else:
         dtype = "list"
 
-    if zip:
-        pickle.dump(
-            train_ds,
-            bz2.BZ2File(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.bz2",
-                "wb",
-            ),
-        )
-        pickle.dump(
-            dev_ds,
-            bz2.BZ2File(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.bz2", "wb"
-            ),
-        )
-        pickle.dump(
-            test_ds,
-            bz2.BZ2File(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.bz2", "wb"
-            ),
-        )
-        pickle.dump(
-            clss_weights,
-            bz2.BZ2File(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.bz2",
-                "wb",
-            ),
-        )
+    if include_spectrograms:
+        train_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_train"
+        dev_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_dev"
+        test_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_test"
+        wts_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_clsswts"
     else:
-        pickle.dump(
-            train_ds,
-            open(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train.pickle",
-                "wb",
-            ),
-        )
-        pickle.dump(
-            dev_ds,
-            open(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev.pickle",
-                "wb",
-            ),
-        )
-        pickle.dump(
-            test_ds,
-            open(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test.pickle",
-                "wb",
-            ),
-        )
-        pickle.dump(
-            clss_weights,
-            open(
-                f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts.pickle",
-                "wb",
-            ),
-        )
+        train_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train"
+        dev_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev"
+        test_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test"
+        wts_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts"
+
+    if zip:
+        pickle.dump(train_ds, bz2.BZ2File( f"{train_save_name}.bz2", "wb"))
+        pickle.dump(dev_ds, bz2.BZ2File(f"{dev_save_name}.bz2", "wb"))
+        pickle.dump(test_ds, bz2.BZ2File(f"{test_save_name}.bz2", "wb"))
+        pickle.dump(clss_weights, bz2.BZ2File(f"{wts_save_name}.bz2", "wb"))
+    else:
+        pickle.dump(train_ds,open(f"{train_save_name}.pickle", "wb"))
+        pickle.dump(dev_ds, open(f"{dev_save_name}.pickle", "wb"))
+        pickle.dump(test_ds, open(f"{test_save_name}.pickle", "wb"))
+        pickle.dump(clss_weights, open(f"{wts_save_name}.pickle", "wb"))
 
 
 def prep_data(
@@ -148,6 +115,7 @@ def prep_data(
     custom_feats_file=None,
     selected_ids=None,
     num_train_ex=None,
+    include_spectrograms=False,
 ):
     """
     Prepare data for a given dataset
@@ -172,6 +140,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms,
         )
     elif dataset == "mosi" or dataset == "cmu_mosi" or dataset == "cmu-mosi":
         train, dev, test, weights = prep_mosi_data(
@@ -186,6 +155,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
     elif dataset == "firstimpr" or dataset == "chalearn":
         train, dev, test, weights = prep_firstimpr_data(
@@ -200,6 +170,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
     elif dataset == "meld":
         train, dev, test, weights = prep_meld_data(
@@ -213,6 +184,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
     elif dataset == "mustard":
         train, dev, test, weights = prep_mustard_data(
@@ -226,6 +198,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
     elif dataset == "ravdess":
         train, dev, test, weights = prep_ravdess_data(
@@ -239,6 +212,7 @@ def prep_data(
             custom_feats_file=custom_feats_file,
             selected_ids=selected_ids,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
     elif dataset == "lives":
         train, dev, test, weights = prep_lives_data(
@@ -252,6 +226,7 @@ def prep_data(
             avg_acoustic_data=avg_acoustic_data,
             custom_feats_file=custom_feats_file,
             num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
         )
 
     return train, dev, test, weights
@@ -319,11 +294,12 @@ if __name__ == "__main__":
     selected_ids.extend(selected_ids_dict["dev"])
 
     transcription_type = "gold"
-    # emb_type = "glove"
+    emb_type = "glove"
     # emb_type = "distilbert"
-    emb_type = "bert"
+    # emb_type = "bert"
     dict_data = True
-    avg_feats = False
+    avg_feats = True
+    with_spec = True
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
     # datasets = ["firstimpr", "meld", "ravdess"]
@@ -352,6 +328,7 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "firstimpr":
             save_partitioned_data(
@@ -367,6 +344,7 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "cdc":
             save_partitioned_data(
@@ -381,6 +359,7 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "meld":
             save_partitioned_data(
@@ -395,6 +374,7 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "mustard":
             save_partitioned_data(
@@ -409,6 +389,7 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "ravdess":
             save_partitioned_data(
@@ -424,6 +405,7 @@ if __name__ == "__main__":
                 custom_feats_file=custom_feats_file,
                 selected_ids=selected_ids,
                 num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )
         elif dataset == "lives":
             save_partitioned_data(
@@ -438,5 +420,6 @@ if __name__ == "__main__":
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 selected_ids=selected_ids,
-                num_train_ex=num_train
+                num_train_ex=num_train,
+                include_spectrograms=with_spec,
             )

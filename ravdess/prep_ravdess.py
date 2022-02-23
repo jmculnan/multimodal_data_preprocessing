@@ -31,6 +31,7 @@ def prep_ravdess_data(
     custom_feats_file=None,
     selected_ids=None,
     num_train_ex=None,
+    include_spectrograms=False,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -53,6 +54,7 @@ def prep_ravdess_data(
         custom_feats_file=custom_feats_file,
         selected_ids=selected_ids,
         embedding_type=embedding_type,
+        include_spectrograms=include_spectrograms
     )
 
     train_data = ravdess_prep.train_data
@@ -88,6 +90,7 @@ class RavdessPrep:
         custom_feats_file=None,
         selected_ids=None,
         embedding_type="distilbert",
+        include_spectrograms=False,  # todo: still need to add this
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
