@@ -443,7 +443,6 @@ class DataPrep:
                 self.acoustic_means,
                 self.acoustic_stdev,
                 speaker2idx,
-                pred_type=self.pred_type,
                 as_dict=as_dict
             )
 
@@ -474,7 +473,8 @@ class DataPrep:
             valid_ids = text_data["id"].tolist()
         elif self.d_type == "lives":
             text_data['utt_num'] = text_data['utt_num'].astype(str)
-            valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
+            valid_ids = text_data.agg(lambda x: f"{x['recording_id']}_utt{x['utt_num']}_speaker{x['speaker']}", axis=1)
+            # valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))

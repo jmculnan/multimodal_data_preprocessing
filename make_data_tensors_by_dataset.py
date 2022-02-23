@@ -483,10 +483,11 @@ def make_data_tensors_lives(
     # create holders for the data
     all_data = {
         "all_utts": [],
-        "all_sentiments": [],
         "all_speakers": [],
         "all_audio_ids": [],
         "utt_lengths": [],
+        "all_recording_ids": [],
+        "all_utt_nums": [],
     }
 
     if bert_type.lower() == "bert":
@@ -495,11 +496,12 @@ def make_data_tensors_lives(
         emb_maker = DistilBertEmb()
 
     for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for LIvES"):
-        if f"{row['recording_id']}_{row['utt_num']}" in used_utts_list:
+        # if f"{row['recording_id']}_{row['utt_num']}" in used_utts_list:
+        if f"{row['recording_id']}_utt{row['utt_num']}_speaker{row['speaker']}" in used_utts_list:
         # if row["id"] in used_utts_list:
 
             # get audio id
-            all_data["all_audio_ids"].append(f"{row['recording_id']}_{row['utt_num']}")
+            all_data["all_audio_ids"].append(f"{row['recording_id']}_utt{row['utt_num']}_speaker{row['speaker']}")
 
             if glove is not None:
                 # create utterance-level holders
@@ -518,18 +520,19 @@ def make_data_tensors_lives(
             else:
                 # else use the bert/distilbert tokenizer instead
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
+
                 # convert ids to tensor
                 ids = torch.tensor(ids)
+                all_data["utt_lengths"].append(len(ids))
+
                 # bert requires an extra dimension to match utt
                 if bert_type.lower() == "bert":
                     ids = ids.unsqueeze(0)
                 utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
-                all_data["utt_lengths"].append(len(ids))
-
                 all_data["all_utts"].append(utt_embs)
 
-            spk_id = row["sid"] + row["speaker"]
+            spk_id = f"{row['speaker']}-{row['sid']}"
 
             recording_id = row['recording_id']
             utt_num = row['utt_num']

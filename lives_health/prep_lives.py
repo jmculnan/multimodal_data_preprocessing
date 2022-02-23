@@ -73,20 +73,11 @@ def prep_lives_data(
     # get train, dev, test data
     train_data, dev_data, test_data = lives_prep.get_data_folds()
 
-    # get train ys
-    if as_dict:
-        train_ys = [int(item["ys"][0]) for item in train_data]
-    else:
-        train_ys = [int(item[4]) for item in train_data]
-
-    # get updated class weights using train ys
-    class_weights = lives_prep.get_updated_class_weights(train_ys)
-
     # # get a subset of the training data, if necessary
     if num_train_ex:
         train_data = get_data_samples(train_data, num_train_ex)
 
-    return train_data, dev_data, test_data, class_weights
+    return train_data, dev_data, test_data, None
 
 
 def preprocess_lives(corpus_path, flatten_data=False, json_data=True, split_audio=False):
