@@ -52,13 +52,17 @@ def prep_firstimpr_data(
     # get train, dev, test data
     print("Now preparing training data")
     train_data = firstimpr_prep.train_prep.combine_xs_and_ys(as_dict=as_dict)
-    print("Now preparing development data")
-    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
-    print("Now preparing test data")
-    test_data = firstimpr_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
-
     # get class weights
     class_weights = firstimpr_prep.train_prep.class_weights
+
+    del firstimpr_prep.train_prep
+    print("Now preparing development data")
+    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
+
+    del firstimpr_prep.dev_prep
+    print("Now preparing test data")
+    test_data = firstimpr_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
+    del firstimpr_prep.test_prep
 
     if num_train_ex:
         train_data = get_data_samples(train_data, num_train_ex)

@@ -127,6 +127,9 @@ class StandardPrep:
             include_spectrograms=include_spectrograms
         )
 
+        print("deleting train data")
+        del train_data
+
         self.dev_prep = DataPrep(
             self.d_type,
             dev_data,
@@ -147,6 +150,9 @@ class StandardPrep:
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
         )
 
+        print("deleting dev data")
+        del dev_data
+
         self.test_prep = DataPrep(
             self.d_type,
             test_data,
@@ -166,6 +172,8 @@ class StandardPrep:
         self.test_prep.update_acoustic_means(
             self.train_prep.acoustic_means, self.train_prep.acoustic_stdev
         )
+
+        del test_data
 
 
 class SelfSplitPrep:
@@ -265,6 +273,8 @@ class SelfSplitPrep:
             include_spectrograms=include_spectrograms
         )
 
+        del self.all_data
+
         # add pred type if needed (currently just mosi)
         if pred_type is not None:
             self.train_prep.add_pred_type(pred_type)
@@ -334,13 +344,6 @@ class DataPrep:
         # get all used ids
         self.used_ids = self.get_all_used_ids(data, self.acoustic_dict)
 
-        if include_spectrograms:
-            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
-            self.spec_set, self.spec_lengths_list = self.make_spectrogram_set(self.spec_dict, self.spec_lengths_dict)
-        else:
-            self.spec_set = None
-            self.spec_lengths_list = None
-
         # get acoustic set for train, dev, test partitions
         self.acoustic_tensor, self.acoustic_lengths = self.make_acoustic_set(
             self.acoustic_dict,
@@ -348,6 +351,16 @@ class DataPrep:
             longest_acoustic,
             add_avging=add_avging,
         )
+        del self.acoustic_dict, self.acoustic_lengths_dict
+
+        if include_spectrograms:
+            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(data_path, data_type)
+            self.spec_set, self.spec_lengths_list = self.make_spectrogram_set(self.spec_dict, self.spec_lengths_dict)
+            del self.spec_dict, self.spec_lengths_dict
+        else:
+            self.spec_set = None
+            self.spec_lengths_list = None
+
         # use acoustic sets to get data tensors
         self.data_tensors = self.make_data_tensors(data, longest_utt, glove, bert_type)
 
@@ -591,13 +604,6 @@ class DataPrep:
         # delete acoustic dict to save space
         del spec_dict
 
-        # pad the sequence and reshape it to proper format
-        # this is here to keep the formatting for acoustic RNN
-        # all_spec = nn.utils.rnn.pad_sequence(all_spec)
-        # all_acoustic = all_acoustic.transpose(0, 1)
-        # all_acoustic = all_acoustic.float()
-        # all_acoustic = all_acoustic.type(torch.FloatTensor)
-
         print(f"Acoustic set made at {datetime.datetime.now()}")
 
         return all_spec, ordered_spec_lengths
@@ -826,10 +832,10 @@ def make_spectrograms_dict(file_path, dataset):
         feats_file_name = spec_file.split("/")[-1]
 
         if dataset == "meld":
-            dia_id, utt_id = feats_file_name.split("_")[:2]
+            dia_id, utt_id = feats_file_name.split(".csv")[0].split("_")
             id = (dia_id, utt_id)
         elif dataset == "cdc":
-            id = feats_file_name.split("_")[1]
+            id = feats_file_name.split(".csv")[0].split("_")[1]
         else:
             id = feats_file_name.split(".csv")[0]
 

@@ -302,9 +302,9 @@ if __name__ == "__main__":
     with_spec = True
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["firstimpr", "meld", "ravdess"]
-    # datasets = ["mustard"]
-    datasets = ["lives"]
+    datasets = ["cdc"]
+    # datasets = ["ravdess"]
+    # datasets = ["lives"]
 
     # custom_feats_file = "combined_features_small.txt"
     custom_feats_file = None
