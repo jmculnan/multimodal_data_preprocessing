@@ -31,6 +31,7 @@ def prep_ravdess_data(
     custom_feats_file=None,
     selected_ids=None,
     num_train_ex=None,
+    include_spectrograms=False,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -53,6 +54,7 @@ def prep_ravdess_data(
         custom_feats_file=custom_feats_file,
         selected_ids=selected_ids,
         embedding_type=embedding_type,
+        include_spectrograms=include_spectrograms
     )
 
     train_data = ravdess_prep.train_data
@@ -88,6 +90,7 @@ class RavdessPrep:
         custom_feats_file=None,
         selected_ids=None,
         embedding_type="distilbert",
+        include_spectrograms=False,  # todo: still need to add this
     ):
         # path to dataset--all within acoustic files for ravdess
         self.path = ravdess_path
@@ -123,6 +126,15 @@ class RavdessPrep:
                 bert_type=embedding_type,
             )
 
+        # get all used ids
+        self.used_ids = self.get_all_used_ids(self.all_data)
+
+        if include_spectrograms:
+            self.spec_dict, self.spec_lengths_dict = make_spectrograms_dict(self.path, "ravdess")
+            # self.spec_list, self.spec_lengths_list = self.make_spectrogram_set(self.spec_dict, self.spec_lengths_dict)
+
+            self.update_data_tensors()
+
         if custom_feats_file:
             (self.train_data, self.dev_data, self.test_data,) = create_data_folds_list(
                 self.all_data, train_prop, test_prop, shuffle=False
@@ -151,6 +163,64 @@ class RavdessPrep:
         self.intensity_weights = get_class_weights(
             self.train_y_intensity, data_type="ravdess"
         )
+
+    def get_all_used_ids(self, all_data):
+        """
+        Get a list of all the ids that have both acoustic and text/gold info
+        :return: array of all valid ids
+        """
+        all_used_ids = [item['audio_id'] for item in all_data]
+
+        return all_used_ids
+
+    def make_spectrogram_set(
+        self,
+        spec_dict,
+        spec_lengths_dict,
+        longest_spec=1500
+    ):
+        """
+        Prepare the spectrogram data
+        :param spec_dict: a dict of acoustic feat dfs
+        :param spec_lengths_dict: a dict of lengths of spectrograms
+        :param longest_spec: the longest allowed spec df
+        :return:
+        """
+
+        # set holders for acoustic data
+        all_spec = []
+        ordered_spec_lengths = []
+
+        # for all items with audio + gold label
+        for item in tqdm(self.used_ids, desc=f"Preparing spec set for ravdess"):
+
+            # pull out the spec feats df
+            spec_data = spec_dict[item]
+            ordered_spec_lengths.append(spec_lengths_dict[item])
+
+            spec_data = spec_data[spec_data.index <= longest_spec]
+            spec_holder = torch.tensor(spec_data.values)
+
+            # add features as tensor to acoustic data
+            all_spec.append(spec_holder)
+
+        # delete acoustic dict to save space
+        del spec_dict
+
+        print(f"Acoustic set made at {datetime.datetime.now()}")
+
+        return all_spec, ordered_spec_lengths
+
+    def update_data_tensors(self):
+        """
+        Add spectrogram info to data tensors if needed
+        """
+        for item in self.all_data:
+            audio_id = item['audio_id']
+
+            item['x_spec'] = self.spec_dict[audio_id]
+            item['spec_length'] = self.spec_lengths_dict[audio_id]
+
 
 
 def make_ravdess_data_tensors(

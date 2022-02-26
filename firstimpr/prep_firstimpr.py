@@ -14,6 +14,7 @@ def prep_firstimpr_data(
     avg_acoustic_data=False,
     custom_feats_file=None,
     num_train_ex=None,
+    include_spectrograms=False,
 ):
     # load glove
     if embedding_type.lower() == "glove":
@@ -40,6 +41,7 @@ def prep_firstimpr_data(
         avg_acoustic_data=avg_acoustic_data,
         custom_feats_file=custom_feats_file,
         bert_type=embedding_type,
+        include_spectrograms=include_spectrograms
     )
 
     # add the prediction type, since first impressions can have several
@@ -50,13 +52,17 @@ def prep_firstimpr_data(
     # get train, dev, test data
     print("Now preparing training data")
     train_data = firstimpr_prep.train_prep.combine_xs_and_ys(as_dict=as_dict)
-    print("Now preparing development data")
-    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
-    print("Now preparing test data")
-    test_data = firstimpr_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
-
     # get class weights
     class_weights = firstimpr_prep.train_prep.class_weights
+
+    del firstimpr_prep.train_prep
+    print("Now preparing development data")
+    dev_data = firstimpr_prep.dev_prep.combine_xs_and_ys(as_dict=as_dict)
+
+    del firstimpr_prep.dev_prep
+    print("Now preparing test data")
+    test_data = firstimpr_prep.test_prep.combine_xs_and_ys(as_dict=as_dict)
+    del firstimpr_prep.test_prep
 
     if num_train_ex:
         train_data = get_data_samples(train_data, num_train_ex)
