@@ -101,7 +101,7 @@ if __name__ == "__main__":
     meld_path = f"{base_path}/MELD_formatted"
     mustard_path = f"{base_path}/MUStARD"
     ravdess_path = f"{base_path}/RAVDESS_Speech"
-    lives_path = "../../lives_test/done"
+    lives_path = "/Volumes/LIvES/"
 
     save_path = "../../datasets/pickled_data"
 
@@ -126,10 +126,10 @@ if __name__ == "__main__":
     avg_feats = True
     with_spec = False
 
-    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
     # datasets = ["cdc"]
     # datasets = ["ravdess"]
-    # datasets = ["lives"]
+    datasets = ["lives"]
 
     # custom_feats_file = "combined_features_small.txt"
     custom_feats_file = None

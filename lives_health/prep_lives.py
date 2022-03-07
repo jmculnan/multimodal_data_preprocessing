@@ -111,7 +111,8 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True, split_audi
                 csv_converter = TranscriptToCSV(fpath, fname)
                 if flatten_data:
                     utt_data = csv_converter.convert_json(alignment="utt")
-                    save_path = f"{fpath}/transcript/lives_json_gold.csv"
+                    # save_path = f"{fpath}/transcript/lives_json_gold.csv"
+                    save_path = f"{fpath}/lives_json_gold.csv"
 
                     # if you want to split audio by utterance, do so
                     if split_audio:
@@ -119,7 +120,8 @@ def preprocess_lives(corpus_path, flatten_data=False, json_data=True, split_audi
                         csv_converter.split_audio(utt_data, corpus_path, fname)
                 else:
                     utt_data = csv_converter.convert_json(alignment="word")
-                    save_path = f"{fpath}/transcript/lives_json_gold_wordaligned.csv"
+                    # save_path = f"{fpath}/transcript/lives_json_gold_wordaligned.csv"
+                    save_path = f"{fpath}/lives_json_gold_wordaligned.csv"
 
                 csv_converter.save_data(utt_data, savepath=save_path)
 
@@ -178,12 +180,13 @@ class TranscriptToCSV:
         """
         with open(self.tfile, "r") as trs:
             tfile_name = self.tfile.split("/")[-1].split(".json")[0]
-            if len(self.tfile.split(" ")) > 1:
+            if len(tfile_name.split(" ")) > 1:
                 participant = tfile_name.split(" ")[0]
                 recording_id = tfile_name.split(" ")[1].split(".trs")[0]
             else:
                 participant = "TODO"
-                recording_id = tfile_name.split(".trs")[0]
+                recording_id = tfile_name
+                # recording_id = tfile_name.split(".trs")[0]
                 if self.recording2sid is not None:
                     participant = self.recording2sid(recording_id)
 
@@ -488,7 +491,9 @@ class TranscriptToCSV:
 
 
 if __name__ == "__main__":
-    cpath = "../../lives_test/done"
+    # cpath = "../../lives_test/done"
+    cpath = "/Volumes/LIvES/transcriptions"
 
+    print(cpath)
     preprocess_lives(cpath, flatten_data=True, json_data=True, split_audio=True)
     # preprocess_lives(cpath, flatten_data=False, json_data=True)

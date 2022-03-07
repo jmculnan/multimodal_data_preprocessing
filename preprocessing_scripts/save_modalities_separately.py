@@ -55,7 +55,7 @@ def save_data_components(
         custom_feats_file,
         selected_ids=selected_ids,
         num_train_ex=None,
-        include_spectrograms=True
+        include_spectrograms=False
     )
     # save class weights
     if zip:
@@ -166,13 +166,13 @@ if __name__ == "__main__":
     selected_ids.extend(selected_ids_dict["dev"])
 
     transcription_type = "gold"
-    emb_type = "glove"
     # emb_type = "distilbert"
-    # emb_type = "bert"
+    # emb_type = "glove"
+    emb_type = "bert"
 
-    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
     # datasets = ["mosi"]
-    datasets = ["cdc", "firstimpr", "meld", "ravdess"]
+    # datasets = ["meld", "ravdess"]
     # datasets = ["ravdess"]
     # datasets = ["lives"]
 
