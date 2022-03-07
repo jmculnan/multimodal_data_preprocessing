@@ -1,3 +1,5 @@
+from cdc.prep_cdc import *
+from cmu_mosi.prep_mosi import *
 from utils.data_saving_and_loading_helpers import *
 
 import pickle
@@ -5,7 +7,7 @@ import bz2
 import os
 
 
-def save_partitioned_data(
+def save_data_components(
     dataset,
     save_path,
     data_path,
@@ -16,12 +18,8 @@ def save_partitioned_data(
     feats_to_use=None,
     pred_type=None,
     zip=False,
-    data_as_dict=False,
-    avg_acoustic_data=False,
     custom_feats_file=None,
     selected_ids=None,
-    num_train_ex=None,
-    include_spectrograms=False,
 ):
     """
     Save partitioned data in pickled format
@@ -52,45 +50,94 @@ def save_partitioned_data(
         emb_type,
         feats_to_use,
         pred_type,
-        data_as_dict,
-        avg_acoustic_data,
+        True,  # data must be dict to use this saving format
+        False,  # acoustic data must not be averaged
         custom_feats_file,
         selected_ids=selected_ids,
-        num_train_ex=num_train_ex,
-        include_spectrograms=include_spectrograms
+        num_train_ex=None,
+        include_spectrograms=True
     )
-
-    # use custom feats set instead of ISXX in save name
-    #   if custom feats are used
-    if custom_feats_file is not None:
-        feature_set = custom_feats_file.split(".")[0]
-
-    if data_as_dict:
-        dtype = "dict"
-    else:
-        dtype = "list"
-
-    if include_spectrograms:
-        train_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_train"
-        dev_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_dev"
-        test_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_test"
-        wts_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_spec_clsswts"
-    else:
-        train_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_train"
-        dev_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_dev"
-        test_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_test"
-        wts_save_name = f"{save_path}/{dataset}_{feature_set}_{emb_type}_{dtype}_clsswts"
-
+    # save class weights
     if zip:
-        pickle.dump(train_ds, bz2.BZ2File( f"{train_save_name}.bz2", "wb"))
-        pickle.dump(dev_ds, bz2.BZ2File(f"{dev_save_name}.bz2", "wb"))
-        pickle.dump(test_ds, bz2.BZ2File(f"{test_save_name}.bz2", "wb"))
-        pickle.dump(clss_weights, bz2.BZ2File(f"{wts_save_name}.bz2", "wb"))
+        pickle.dump(clss_weights, bz2.BZ2File(f"{save_path}/{dataset}_clsswts.bz2", "wb"))
     else:
-        pickle.dump(train_ds,open(f"{train_save_name}.pickle", "wb"))
-        pickle.dump(dev_ds, open(f"{dev_save_name}.pickle", "wb"))
-        pickle.dump(test_ds, open(f"{test_save_name}.pickle", "wb"))
-        pickle.dump(clss_weights, open(f"{wts_save_name}.pickle", "wb"))
+        pickle.dump(clss_weights, open(f"{save_path}/{dataset}_clsswts.pickle", "wb"))
+
+
+    # todo: implement if we need custom fields per dataset
+    # # get all parts of data to save
+    # all_fields = dev_ds[0].keys()
+
+    all_data = [('train', train_ds),
+                ('dev', dev_ds),
+                ('test', test_ds)]
+
+    for partition_tuple in all_data:
+        # get name of partition
+        partition_name = partition_tuple[0]
+        partition = partition_tuple[1]
+        # get spec data + audio_ids
+        spec_data = get_specific_fields(partition, "spec")
+        spec_save_name = f"{save_path}/{dataset}_spec_{partition_name}"
+
+        # get acoustic data + audio_ids
+        acoustic_data = get_specific_fields(partition, "acoustic")
+        # use custom feats set instead of ISXX in save name
+        #   if custom feats are used
+        if custom_feats_file is not None:
+            feature_set = custom_feats_file.split(".")[0]
+        acoustic_save_name = f"{save_path}/{dataset}_{feature_set}_{partition_name}"
+
+        # get utt data + audio_ids
+        utt_data = get_specific_fields(partition, "utt")
+        utt_save_name = f"{save_path}/{dataset}_{emb_type}_{partition_name}"
+
+        # get ys data + audio_ids
+        ys_data = get_specific_fields(partition, "ys")
+        ys_save_name = f"{save_path}/{dataset}_ys_{partition_name}"
+
+        # save
+        if zip:
+            pickle.dump(spec_data, bz2.BZ2File(f"{spec_save_name}.bz2", "wb"))
+            pickle.dump(acoustic_data, bz2.BZ2File(f"{acoustic_save_name}.bz2", "wb"))
+            pickle.dump(utt_data, bz2.BZ2File(f"{utt_save_name}.bz2", "wb"))
+            pickle.dump(ys_data, bz2.BZ2File(f"{ys_save_name}.bz2", "wb"))
+        else:
+            pickle.dump(spec_data,open(f"{spec_save_name}.pickle", "wb"))
+            pickle.dump(acoustic_data, open(f"{acoustic_save_name}.pickle", "wb"))
+            pickle.dump(utt_data, open(f"{utt_save_name}.pickle", "wb"))
+            pickle.dump(ys_data, open(f"{ys_save_name}.pickle", "wb"))
+
+
+def get_specific_fields(data, field_type, fields=None):
+    """
+    Partition the data based on a set of keys
+    :param data: The dataset
+    :param field_type: 'spec', 'acoustic', 'utt', 'ys', or 'other'
+    :param fields: if specific fields are given, use this instead of
+        field type to get portions of data
+    :return: The subset of data with these fields
+    """
+    sub_data = []
+    if fields is not None:
+        for item in data:
+            sub_data.append({key: value for key, value in item.items() if key in fields})
+    else:
+        if field_type.lower() == "spec":
+            keys = ["x_spec", "spec_length", "audio_id"]
+        elif field_type.lower() == "acoustic":
+            keys = ["x_acoustic", "acoustic_length", "audio_id"]
+        elif field_type.lower() == "utt":
+            keys = ["x_utt", "utt_length", "audio_id"]
+        elif field_type.lower() == "ys":
+            keys = ["ys", "audio_id"]
+        else:
+            exit("Field type not listed, and no specific fields given")
+
+        for item in data:
+            sub_data.append({key: value for key, value in item.items() if key in keys})
+
+    return sub_data
 
 
 if __name__ == "__main__":
@@ -103,7 +150,7 @@ if __name__ == "__main__":
     ravdess_path = f"{base_path}/RAVDESS_Speech"
     lives_path = "../../lives_test/done"
 
-    save_path = "../../datasets/pickled_data"
+    save_path = "../../datasets/pickled_data/field_separated_data"
 
     glove_path = "../../datasets/glove/glove.subset.300d.txt"
 
@@ -122,25 +169,19 @@ if __name__ == "__main__":
     emb_type = "glove"
     # emb_type = "distilbert"
     # emb_type = "bert"
-    dict_data = True
-    avg_feats = True
-    with_spec = False
 
-    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["cdc"]
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    # datasets = ["mosi"]
+    datasets = ["cdc", "firstimpr", "meld", "ravdess"]
     # datasets = ["ravdess"]
     # datasets = ["lives"]
 
     # custom_feats_file = "combined_features_small.txt"
     custom_feats_file = None
 
-    # set number of training examples
-    # num_train = 500
-    num_train = None
-
     for dataset in datasets:
         if dataset == "mosi":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 mosi_path,
@@ -149,14 +190,10 @@ if __name__ == "__main__":
                 glove_path,
                 pred_type="classification",
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
         elif dataset == "firstimpr":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 firstimpr_path,
@@ -165,14 +202,10 @@ if __name__ == "__main__":
                 glove_path,
                 pred_type="max_class",
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
         elif dataset == "cdc":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 cdc_path,
@@ -180,14 +213,10 @@ if __name__ == "__main__":
                 transcription_type,
                 glove_path,
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
         elif dataset == "meld":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 meld_path,
@@ -195,14 +224,10 @@ if __name__ == "__main__":
                 transcription_type,
                 glove_path,
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
         elif dataset == "mustard":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 mustard_path,
@@ -210,14 +235,10 @@ if __name__ == "__main__":
                 transcription_type,
                 glove_path,
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
         elif dataset == "ravdess":
-            save_partitioned_data(
+            save_data_components(
                 dataset,
                 save_path,
                 ravdess_path,
@@ -225,26 +246,19 @@ if __name__ == "__main__":
                 transcription_type,
                 glove_path,
                 emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
                 selected_ids=selected_ids,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
             )
-        elif dataset == "lives":
-            save_partitioned_data(
-                dataset,
-                save_path,
-                lives_path,
-                feature_set,
-                transcription_type,
-                glove_path,
-                emb_type=emb_type,
-                data_as_dict=dict_data,
-                avg_acoustic_data=avg_feats,
-                custom_feats_file=custom_feats_file,
-                selected_ids=selected_ids,
-                num_train_ex=num_train,
-                include_spectrograms=with_spec,
-            )
+        # todo: lives requires custom fields
+        # elif dataset == "lives":
+        #     save_data_components(
+        #         dataset,
+        #         save_path,
+        #         lives_path,
+        #         feature_set,
+        #         transcription_type,
+        #         glove_path,
+        #         emb_type=emb_type,
+        #         custom_feats_file=custom_feats_file,
+        #         selected_ids=selected_ids,
+        #     )
