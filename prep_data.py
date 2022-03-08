@@ -242,6 +242,8 @@ class SelfSplitPrep:
         if glove is None:
             if bert_type.lower() == "bert":
                 self.tokenizer = get_bert_tokenizer()
+            elif bert_type.lower() == "roberta":
+                self.tokenizer = get_roberta_tokenizer()
             else:
                 self.tokenizer = get_distilbert_tokenizer()
             self.use_bert = True
@@ -867,3 +869,11 @@ def get_bert_tokenizer():
 
     # return
     return bert_emb_mkr.tokenizer
+
+
+def get_roberta_tokenizer():
+    # instantiate roberta emb object
+    roberta_emb_mkr = BertEmb(use_roberta=True)
+
+    # return
+    return roberta_emb_mkr.tokenizer

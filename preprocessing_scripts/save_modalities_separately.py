@@ -170,9 +170,9 @@ if __name__ == "__main__":
     # emb_type = "glove"
     emb_type = "bert"
 
-    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
     # datasets = ["mosi"]
-    # datasets = ["meld", "ravdess"]
+    datasets = ["firstimpr", "meld", "ravdess"]
     # datasets = ["ravdess"]
     # datasets = ["lives"]
 

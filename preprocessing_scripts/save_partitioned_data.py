@@ -101,7 +101,7 @@ if __name__ == "__main__":
     meld_path = f"{base_path}/MELD_formatted"
     mustard_path = f"{base_path}/MUStARD"
     ravdess_path = f"{base_path}/RAVDESS_Speech"
-    lives_path = "/Volumes/LIvES/"
+    lives_path = "/Volumes/LIvES"
 
     save_path = "../../datasets/pickled_data"
 
@@ -121,13 +121,14 @@ if __name__ == "__main__":
     transcription_type = "gold"
     emb_type = "glove"
     # emb_type = "distilbert"
+    # emb_type = "roberta"
     # emb_type = "bert"
     dict_data = True
     avg_feats = True
     with_spec = False
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["cdc"]
+    # datasets = ["mosi"]
     # datasets = ["ravdess"]
     datasets = ["lives"]
 

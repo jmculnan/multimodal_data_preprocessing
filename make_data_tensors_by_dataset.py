@@ -36,6 +36,8 @@ def make_data_tensors_meld(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -127,6 +129,8 @@ def make_data_tensors_mustard(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -221,6 +225,8 @@ def make_data_tensors_chalearn(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -325,6 +331,8 @@ def make_data_tensors_cdc(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -410,6 +418,8 @@ def make_data_tensors_mosi(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -492,6 +502,8 @@ def make_data_tensors_lives(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
