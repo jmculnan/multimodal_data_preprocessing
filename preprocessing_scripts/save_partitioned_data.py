@@ -110,13 +110,22 @@ if __name__ == "__main__":
     feature_set = "IS13"
 
     # get the ids from a pickle file containing ids in order
-    selected_ids_dict = pickle.load(
+    rav_selected_ids_dict = pickle.load(
         open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
     )
-    selected_ids = []
-    selected_ids.extend(selected_ids_dict["train"])
-    selected_ids.extend(selected_ids_dict["test"])
-    selected_ids.extend(selected_ids_dict["dev"])
+    rav_selected_ids = []
+    rav_selected_ids.extend(rav_selected_ids_dict["train"])
+    rav_selected_ids.extend(rav_selected_ids_dict["test"])
+    rav_selected_ids.extend(rav_selected_ids_dict["dev"])
+
+    # get ids for mosi frmo pickle file containing ids in order
+    mosi_selected_ids_dict = pickle.load(
+        open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    )
+    mosi_selected_ids = []
+    mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
 
     transcription_type = "gold"
     emb_type = "glove"
@@ -153,6 +162,7 @@ if __name__ == "__main__":
                 data_as_dict=dict_data,
                 avg_acoustic_data=avg_feats,
                 custom_feats_file=custom_feats_file,
+                selected_ids=mosi_selected_ids,
                 num_train_ex=num_train,
                 include_spectrograms=with_spec,
             )
