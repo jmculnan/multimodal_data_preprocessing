@@ -55,7 +55,7 @@ def save_data_components(
         custom_feats_file,
         selected_ids=selected_ids,
         num_train_ex=None,
-        include_spectrograms=False
+        include_spectrograms=True
     )
     # save class weights
     if zip:
@@ -157,13 +157,22 @@ if __name__ == "__main__":
     feature_set = "IS13"
 
     # get the ids from a pickle file containing ids in order
-    selected_ids_dict = pickle.load(
+    rav_selected_ids_dict = pickle.load(
         open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
     )
-    selected_ids = []
-    selected_ids.extend(selected_ids_dict["train"])
-    selected_ids.extend(selected_ids_dict["test"])
-    selected_ids.extend(selected_ids_dict["dev"])
+    rav_selected_ids = []
+    rav_selected_ids.extend(rav_selected_ids_dict["train"])
+    rav_selected_ids.extend(rav_selected_ids_dict["test"])
+    rav_selected_ids.extend(rav_selected_ids_dict["dev"])
+
+    # get ids for mosi frmo pickle file containing ids in order
+    mosi_selected_ids_dict = pickle.load(
+        open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    )
+    mosi_selected_ids = []
+    mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
 
     transcription_type = "gold"
     # emb_type = "distilbert"
@@ -171,8 +180,8 @@ if __name__ == "__main__":
     emb_type = "bert"
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["mosi"]
-    datasets = ["firstimpr", "meld", "ravdess"]
+    datasets = ["meld"]
+    # datasets = ["firstimpr", "meld", "ravdess"]
     # datasets = ["ravdess"]
     # datasets = ["lives"]
 
@@ -191,6 +200,7 @@ if __name__ == "__main__":
                 pred_type="classification",
                 emb_type=emb_type,
                 custom_feats_file=custom_feats_file,
+                selected_ids=mosi_selected_ids,
             )
         elif dataset == "firstimpr":
             save_data_components(
@@ -247,7 +257,7 @@ if __name__ == "__main__":
                 glove_path,
                 emb_type=emb_type,
                 custom_feats_file=custom_feats_file,
-                selected_ids=selected_ids,
+                selected_ids=rav_selected_ids,
             )
         # todo: lives requires custom fields
         # elif dataset == "lives":
