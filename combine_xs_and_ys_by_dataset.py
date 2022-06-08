@@ -506,3 +506,55 @@ def combine_xs_and_ys_lives(
         exit("LIvES data can only be used in dict format")
 
     return data
+
+
+def combine_xs_and_ys_asist(
+                       data_dict,
+                       acoustic_data,
+                       acoustic_lengths,
+                       acoustic_means,
+                       acoustic_stdev,
+                       spec_data=None,
+                       spec_lengths=None,
+                       as_dict=False,
+                       ):
+    # combine all x and y data into list of tuples
+    # if no gold labels, only combine x data
+    data = []
+    if as_dict:
+        for i, item in enumerate(acoustic_data):
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
+            data.append(
+                {
+                    "x_acoustic": item_transformed.clone().detach(),
+                    "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
+                    "x_speaker": data_dict["all_speakers"][i],
+                    "x_gender": 0,
+                    "ys": [data_dict["ys"][i] if 'ys' in data_dict.keys() else 0],
+                    "audio_id": data_dict["all_audio_ids"][i],
+                    "utt_length": data_dict["utt_lengths"][i],
+                    "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0,
+                }
+            )
+    else:
+        for i, item in enumerate(acoustic_data):
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
+            data.append(
+                (
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
+                    data_dict["all_speakers"][i],
+                    0,
+                    data_dict["ys"][i].clone().detach() if 'ys' in data_dict.keys() else 0,
+                    data_dict["utt_lengths"][i],
+                    acoustic_lengths[i],
+                )
+            )
+
+    return data

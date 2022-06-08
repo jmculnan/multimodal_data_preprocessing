@@ -20,7 +20,7 @@ from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_meld,
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
-    combine_xs_and_ys_mosi, combine_xs_and_ys_lives,
+    combine_xs_and_ys_mosi, combine_xs_and_ys_lives, combine_xs_and_ys_asist,
 )
 
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
@@ -234,6 +234,9 @@ class SelfSplitPrep:
         elif data_type == "lives":
             # lives data has a more complicated way of getting speaker
             all_speakers = get_lives_speakers(self.all_data)
+            speaker2idx = get_speaker_to_index_dict(all_speakers)
+        elif data_type == "asist":
+            all_speakers = set(self.all_data["participant"])
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
             speaker2idx = None
@@ -480,6 +483,17 @@ class DataPrep:
                 spec_data=self.spec_set,
                 spec_lengths=self.spec_lengths_list
             )
+        elif self.d_type == "asist":
+            combined = combine_xs_and_ys_asist(
+                self.data_tensors,
+                self.acoustic_tensor,
+                self.acoustic_lengths,
+                self.acoustic_means,
+                self.acoustic_stdev,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list,
+                as_dict=as_dict,
+            )
 
         return combined
 
@@ -510,6 +524,8 @@ class DataPrep:
             text_data['utt_num'] = text_data['utt_num'].astype(str)
             valid_ids = text_data.agg(lambda x: f"{x['recording_id']}_utt{x['utt_num']}_speaker{x['speaker']}", axis=1)
             # valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
+        elif self.d_type == "asist":
+            valid_ids = text_data['audio_id'].tolist()
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -646,6 +662,10 @@ class DataPrep:
             )
         elif self.d_type == "lives":
             data_tensor_dict = make_data_tensors_lives(
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
+            )
+        elif self.d_type == "asist":
+            data_tensor_dict = make_data_tensors_asist(
                 text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
 

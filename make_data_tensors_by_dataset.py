@@ -559,3 +559,86 @@ def make_data_tensors_lives(
 
     # return data
     return all_data
+
+
+def make_data_tensors_asist(
+    text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"
+):
+    """
+    Make the data tensors for asist
+    :param text_data: a pandas df containing text and gold
+    :param used_utts_list: the list of all utts with acoustic data
+    :param longest_utt: length of longest utt
+    :param tokenizer: a tokenizer
+    :param glove: an instance of class Glove
+    :return: a dict containing tensors for utts, speakers, ys,
+        and utterance lengths
+    """
+    # create holders for the data
+    all_data = {
+        "all_utts": [],
+        "all_speakers": [],
+        "all_audio_ids": [],
+        "utt_lengths": [],
+        "all_emotions": [],
+        "all_traits": [],
+        "all_sentiments": [],
+    }
+
+    if bert_type.lower() == "bert":
+        emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
+    else:
+        emb_maker = DistilBertEmb()
+
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for LIvES"):
+        # if f"{row['recording_id']}_{row['utt_num']}" in used_utts_list:
+        if row['audio_id'] in used_utts_list:
+
+            # get audio id
+            all_data["all_audio_ids"].append(row['audio_id'])
+
+            if glove is not None:
+                # create utterance-level holders
+                utts = [0] * longest_utt
+
+                # get values from row
+                utt = tokenizer(clean_up_word(str(row["utterance"])))
+                all_data["utt_lengths"].append(len(utt))
+
+                # convert words to indices for glove
+                utt_indexed = glove.index(utt)
+                for i, item in enumerate(utt_indexed):
+                    utts[i] = item
+
+                all_data["all_utts"].append(torch.tensor(utts))
+            else:
+                # else use the bert/distilbert tokenizer instead
+                utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
+
+                # convert ids to tensor
+                ids = torch.tensor(ids)
+                all_data["utt_lengths"].append(len(ids))
+
+                # bert requires an extra dimension to match utt
+                if bert_type.lower() == "bert":
+                    ids = ids.unsqueeze(0)
+                utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
+
+                all_data["all_utts"].append(utt_embs)
+
+            spk_id = row["participant"]
+            emotion = row["emotion"]
+            sentiment = row["sentiment"]
+
+            all_data["all_speakers"].append(spk_id)
+            all_data["all_emotions"].append(emotion)
+            all_data["all_sentiments"].append(sentiment)
+
+    # pad and transpose utterance sequences
+    all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])
+    all_data["all_utts"] = all_data["all_utts"].transpose(0, 1)
+
+    # return data
+    return all_data
