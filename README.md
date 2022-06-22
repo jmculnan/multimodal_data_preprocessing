@@ -2,7 +2,7 @@
 Data preprocessing code for multiple multimodal datasets
 
 This code currently includes preprocessing for text and audio modalities. 
-Text may be encoded with GloVe or DistilBERT. 
+Text may be encoded with GloVe, DistilBERT, or BERT. 
 
 ## Included datasets
 
