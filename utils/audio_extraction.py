@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 import pandas as pd
 
-from wav2vec.create_spectrograms_with_wav2vec import get_and_save_spectrogram
+# from wav2vec.create_spectrograms_with_wav2vec import get_and_save_spectrogram
 
 
 class TRSToCSV:
@@ -331,8 +331,9 @@ def run_feature_extraction(audio_path, feature_set, save_dir):
                     audio_path, wfile, save_dir, "../../opensmile-3.0"
                 )
                 audio_extractor.save_acoustic_csv(feature_set, save_name)
-            elif feature_set.lower() in ["spectrogram", "spec"]:
-                get_and_save_spectrogram(audio_path, wfile, save_dir, resample=None)
+            # todo: reimplement me
+            # elif feature_set.lower() in ["spectrogram", "spec"]:
+            #     get_and_save_spectrogram(audio_path, wfile, save_dir, resample=None)
             elif feature_set.lower() in ["asr", "wav2vec"]:
                 pass
 

@@ -55,7 +55,7 @@ def prep_lives_data(
         glove = None
 
     # holder for name of file containing utterance info
-    utts_name = f"transcript/lives_json_{transcription_type.lower()}.csv"
+    utts_name = f"transcriptions/lives_json_{transcription_type.lower()}.csv"
 
     # create instance of StandardPrep class
     lives_prep = SelfSplitPrep(
@@ -494,6 +494,5 @@ if __name__ == "__main__":
     # cpath = "../../lives_test/done"
     cpath = "/Volumes/LIvES/transcriptions"
 
-    print(cpath)
     preprocess_lives(cpath, flatten_data=True, json_data=True, split_audio=True)
     # preprocess_lives(cpath, flatten_data=False, json_data=True)

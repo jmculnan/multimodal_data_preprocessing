@@ -3,7 +3,7 @@
 
 import torch
 from torch import nn
-from transformers import BertTokenizer, BertModel, DistilBertModel, DistilBertTokenizer
+from transformers import BertTokenizer, BertModel, DistilBertModel, DistilBertTokenizer, RobertaTokenizer, RobertaModel
 
 # Load pre-trained model tokenizer (vocabulary)
 
@@ -103,15 +103,25 @@ class DistilBertEmb:
 
 
 class BertEmb:
-    def __init__(self):
-        self.tokenizer = BertTokenizer.from_pretrained(
-            "bert-base-uncased", do_lower_case=True
-        )
+    def __init__(self, use_roberta=False):
+        if not use_roberta:
+            self.tokenizer = BertTokenizer.from_pretrained(
+                "bert-base-uncased", do_lower_case=True
+            )
+        else:
+            self.tokenizer = RobertaTokenizer.from_pretrained(
+                "roberta-base", do_lower_case=True
+            )
 
         # Load pre-trained model (weights)
-        self.model = BertModel.from_pretrained(
-            "bert-base-uncased", output_hidden_states=True,
-        )
+        if not use_roberta:
+            self.model = BertModel.from_pretrained(
+                "bert-base-uncased", output_hidden_states=True,
+            )
+        else:
+            self.model = RobertaModel.from_pretrained(
+                "roberta-base", output_hidden_states=True
+            )
         self.model.eval()
 
     def tokenize(self, sent):

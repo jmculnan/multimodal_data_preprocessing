@@ -1,6 +1,7 @@
 # prepare text and audio for use in neural network models
 import math
 import os
+import pickle
 import random
 import sys
 from collections import OrderedDict
@@ -627,3 +628,84 @@ def transform_acoustic_item(item, acoustic_means, acoustic_stdev):
     acoustic_stdev : the corresponding stdev vector
     """
     return (item - acoustic_means) / acoustic_stdev
+
+
+def split_dataset_save_indices(data_path,
+                               perc_train,
+                               perc_test,
+                               pickle_savepath,
+                               speaker_in_one_partition=True):
+    """
+    Split a dataset into train, dev, test partitions
+    Save the audio_ids of each partition to a pickle
+    :param data_path: path/name of tsv file containing all item names
+        (and speakers if speaker_in_one_partition)
+    :param perc_train: percentage of the items to go to train set
+    :param perc_test: percentage of items to go to test set
+    :param pickle_savepath: the path and name of pickle file to save
+    :param speaker_in_one_partition: whether all items by a single
+        speaker belong in a single partition
+    :return:
+    """
+    # read in data
+    data = pd.read_csv(data_path, sep="\t")
+
+    idx2data = {}
+
+    # get speakers and utt ids
+    speakers = data['speaker'].unique()
+    ids = data['id'].unique()
+
+    if speaker_in_one_partition:
+        # get all speaker data
+        all_data = speakers
+    else:
+        # get all utt ids
+        all_data = ids
+
+    # add this to data dict
+    max_num = len(all_data)
+    for i, item in enumerate(all_data):
+        idx2data[i] = item
+
+    idxs = list(range(max_num))
+
+    # shuffle order
+    random.shuffle(idxs)
+
+    # split
+    train = idxs[:round(max_num * perc_train)]
+    test = idxs[round(max_num * perc_train):round(max_num * perc_train) + round(max_num * perc_test)]
+    dev = idxs[round(max_num * perc_train) + round(max_num * perc_test):]
+
+    # put all data together
+    all_data = {"train": [], "dev": [], "test": []}
+
+    # add items to relevant partition
+    if speaker_in_one_partition:
+        for item in train:
+            name = idx2data[item]
+            all_data['train'].extend([utt_id for utt_id in ids if name in utt_id])
+            random.shuffle(all_data['train'])
+        for item in dev:
+            name = idx2data[item]
+            all_data['dev'].extend([utt_id for utt_id in ids if name in utt_id])
+            random.shuffle(all_data['dev'])
+        for item in test:
+            name = idx2data[item]
+            all_data['test'].extend([utt_id for utt_id in ids if name in utt_id])
+            random.shuffle(all_data['test'])
+    else:
+        all_data['train'].extend([idx2data[item] for item in train])
+        all_data['dev'].extend([idx2data[item] for item in dev])
+        all_data['test'].extend([idx2data[item] for item in test])
+
+    # save item names
+    pickle.dump(all_data, open(pickle_savepath, 'wb'))
+
+
+if __name__ == "__main__":
+    mosi_path = "../../datasets/multimodal_datasets/CMU_MOSI/mosi_gold.tsv"
+    save_path = "../../datasets/pickled_data/mosi_ordered_ids.pickle"
+
+    split_dataset_save_indices(mosi_path, .60, .20, save_path, True)

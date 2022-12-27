@@ -36,6 +36,8 @@ def make_data_tensors_meld(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -127,6 +129,8 @@ def make_data_tensors_mustard(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -221,6 +225,8 @@ def make_data_tensors_chalearn(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -325,6 +331,8 @@ def make_data_tensors_cdc(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -410,6 +418,8 @@ def make_data_tensors_mosi(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -492,6 +502,8 @@ def make_data_tensors_lives(
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -549,9 +561,11 @@ def make_data_tensors_lives(
     return all_data
 
 
-def make_data_tensors_asist(text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"):
+def make_data_tensors_asist(
+    text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"
+):
     """
-    Make the data tensors for lives
+    Make the data tensors for asist
     :param text_data: a pandas df containing text and gold
     :param used_utts_list: the list of all utts with acoustic data
     :param longest_utt: length of longest utt
@@ -580,6 +594,8 @@ def make_data_tensors_asist(text_data, used_utts_list, longest_utt, tokenizer, g
 
     if bert_type.lower() == "bert":
         emb_maker = BertEmb()
+    elif bert_type.lower() == "roberta":
+        emb_maker = BertEmb(use_roberta=True)
     else:
         emb_maker = DistilBertEmb()
 
@@ -608,16 +624,15 @@ def make_data_tensors_asist(text_data, used_utts_list, longest_utt, tokenizer, g
                 utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
                 # convert ids to tensor
                 ids = torch.tensor(ids)
+                all_data["utt_lengths"].append(len(ids))
                 # bert requires an extra dimension to match utt
                 if bert_type.lower() == "bert":
                     ids = ids.unsqueeze(0)
                 utt_embs = emb_maker.get_embeddings(utt, ids, longest_utt)
 
-                all_data["utt_lengths"].append(len(ids))
-
                 all_data["all_utts"].append(utt_embs)
 
-            spk_id = row["participantid"]
+            spk_id = row["participantid"]  #participant
             sentiment = sent2idx[row["sentiment"]]
             emotion = emo2idx[row["emotion"]]
             trait = trait2idx[row["max_trait"]]

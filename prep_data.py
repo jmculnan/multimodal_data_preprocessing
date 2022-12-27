@@ -237,7 +237,7 @@ class SelfSplitPrep:
             all_speakers = get_lives_speakers(self.all_data)
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         elif data_type == "asist":
-            all_speakers = set(self.all_data['participantid'])
+            all_speakers = set(self.all_data['participantid']) # participant
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
             speaker2idx = None
@@ -246,6 +246,8 @@ class SelfSplitPrep:
         if glove is None:
             if bert_type.lower() == "bert":
                 self.tokenizer = get_bert_tokenizer()
+            elif bert_type.lower() == "roberta":
+                self.tokenizer = get_roberta_tokenizer()
             else:
                 self.tokenizer = get_distilbert_tokenizer()
             self.use_bert = True
@@ -489,10 +491,9 @@ class DataPrep:
                 self.acoustic_lengths,
                 self.acoustic_means,
                 self.acoustic_stdev,
-                speaker2idx,
-                as_dict=as_dict,
                 spec_data=self.spec_set,
-                spec_lengths=self.spec_lengths_list
+                spec_lengths=self.spec_lengths_list,
+                as_dict=as_dict,
             )
 
         return combined
@@ -525,7 +526,7 @@ class DataPrep:
             valid_ids = text_data.agg(lambda x: f"{x['recording_id']}_utt{x['utt_num']}_speaker{x['speaker']}", axis=1)
             # valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
         elif self.d_type == "asist":
-            valid_ids = text_data["message_id"].tolist()
+            valid_ids = text_data["message_id"].tolist() # audio_id
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -892,3 +893,11 @@ def get_bert_tokenizer():
 
     # return
     return bert_emb_mkr.tokenizer
+
+
+def get_roberta_tokenizer():
+    # instantiate roberta emb object
+    roberta_emb_mkr = BertEmb(use_roberta=True)
+
+    # return
+    return roberta_emb_mkr.tokenizer

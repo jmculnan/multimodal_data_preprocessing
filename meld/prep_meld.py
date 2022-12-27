@@ -54,7 +54,7 @@ def prep_meld_data(
 
     # update train and dev
     train_and_dev = train_data + dev_data
-    train_data, dev_data = train_test_split(train_and_dev, test_size=0.2)
+    train_data, dev_data = train_test_split(train_and_dev, test_size=0.2, random_state=88)
 
     # todo: fix weights so they are only coming from repartitioned train
     class_weights = meld_prep.train_prep.class_weights

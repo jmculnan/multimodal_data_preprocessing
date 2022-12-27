@@ -59,7 +59,7 @@ def save_data_components(
         custom_feats_file,
         selected_ids=selected_ids,
         num_train_ex=None,
-        include_spectrograms=False
+        include_spectrograms=True
     )
     # save class weights
     if zip:
@@ -166,24 +166,22 @@ if __name__ == "__main__":
     feature_set = "IS13"
 
     # get the ids from a pickle file containing ids in order
-    #rav_selected_ids_dict = pickle.load(
-        #open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
-    #    open("/media/jculnan/backup/jculnan/datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
-    #)
-    #rav_selected_ids = []
-    #rav_selected_ids.extend(rav_selected_ids_dict["train"])
-    #rav_selected_ids.extend(rav_selected_ids_dict["test"])
-    #rav_selected_ids.extend(rav_selected_ids_dict["dev"])
+    rav_selected_ids_dict = pickle.load(
+        open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
+    )
+    rav_selected_ids = []
+    rav_selected_ids.extend(rav_selected_ids_dict["train"])
+    rav_selected_ids.extend(rav_selected_ids_dict["test"])
+    rav_selected_ids.extend(rav_selected_ids_dict["dev"])
 
     # get ids for mosi frmo pickle file containing ids in order
-    #mosi_selected_ids_dict = pickle.load(
-    #    # open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
-    #    open('/media/jculnan/backup/jculnan/datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
-    #)
-    #mosi_selected_ids = []
-    #mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
-    #mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
-    #mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
+    mosi_selected_ids_dict = pickle.load(
+        open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    )
+    mosi_selected_ids = []
+    mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
+    mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
 
     transcription_type = "gold"
     #emb_type = "distilbert"
