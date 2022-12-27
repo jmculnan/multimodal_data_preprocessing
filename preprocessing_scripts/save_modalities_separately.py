@@ -1,3 +1,7 @@
+import sys
+sys.path.append("/home/jculnan/github/multimodal_data_preprocessing")
+
+
 from cdc.prep_cdc import *
 from cmu_mosi.prep_mosi import *
 from utils.data_saving_and_loading_helpers import *
@@ -141,38 +145,55 @@ def get_specific_fields(data, field_type, fields=None):
 
 
 if __name__ == "__main__":
-    base_path = "../../datasets/multimodal_datasets"
-    cdc_path = f"{base_path}/Columbia_deception_corpus"
-    mosi_path = f"{base_path}/CMU_MOSI"
-    firstimpr_path = f"{base_path}/FirstImpr"
-    meld_path = f"{base_path}/MELD_formatted"
-    mustard_path = f"{base_path}/MUStARD"
-    ravdess_path = f"{base_path}/RAVDESS_Speech"
-    lives_path = "../../lives_test/done"
+    base_path = "/media/jculnan/backup/jculnan/datasets/asist_data2"
+    #base_path = "/media/jculnan/backup/jculnan/datasets/multimodal_datasets"
+    #base_path = "../../datasets/multimodal_datasets"
+    #cdc_path = f"{base_path}/Columbia_deception_corpus"
+    #mosi_path = f"{base_path}/CMU_MOSI"
+    #firstimpr_path = f"{base_path}/FirstImpr"
+    #meld_path = f"{base_path}/MELD_formatted"
+    #mustard_path = f"{base_path}/MUStARD"
+    #ravdess_path = f"{base_path}/RAVDESS_Speech"
+    asist_path = f"{base_path}"
+    #lives_path = "../../lives_test/done"
 
-    save_path = "../../datasets/pickled_data/field_separated_data"
+    #save_path = "../../datasets/pickled_data/field_separated_data"
+    save_path = "/media/jculnan/backup/jculnan/datasets/pickled_data/field_separated_data"
 
-    glove_path = "../../datasets/glove/glove.subset.300d.txt"
+    #glove_path = "../../datasets/glove/glove.subset.300d.txt"
+    glove_path = "/media/jculnan/backup/jculnan/datasets/glove/glove.subset.300d.txt"
 
     feature_set = "IS13"
 
     # get the ids from a pickle file containing ids in order
-    selected_ids_dict = pickle.load(
-        open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
-    )
-    selected_ids = []
-    selected_ids.extend(selected_ids_dict["train"])
-    selected_ids.extend(selected_ids_dict["test"])
-    selected_ids.extend(selected_ids_dict["dev"])
+    #rav_selected_ids_dict = pickle.load(
+        #open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
+    #    open("/media/jculnan/backup/jculnan/datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
+    #)
+    #rav_selected_ids = []
+    #rav_selected_ids.extend(rav_selected_ids_dict["train"])
+    #rav_selected_ids.extend(rav_selected_ids_dict["test"])
+    #rav_selected_ids.extend(rav_selected_ids_dict["dev"])
+
+    # get ids for mosi frmo pickle file containing ids in order
+    #mosi_selected_ids_dict = pickle.load(
+    #    # open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    #    open('/media/jculnan/backup/jculnan/datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    #)
+    #mosi_selected_ids = []
+    #mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
+    #mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
+    #mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
 
     transcription_type = "gold"
-    # emb_type = "distilbert"
-    # emb_type = "glove"
-    emb_type = "bert"
+    #emb_type = "distilbert"
+    emb_type = "distilbert"
+    # emb_type = "bert"
 
-    datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
-    # datasets = ["mosi"]
-    # datasets = ["meld", "ravdess"]
+    # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]
+    #datasets = ["firstimpr", "meld"]
+    datasets = ["asist"]
+    # datasets = ["firstimpr", "meld", "ravdess"]
     # datasets = ["ravdess"]
     # datasets = ["lives"]
 
@@ -191,6 +212,7 @@ if __name__ == "__main__":
                 pred_type="classification",
                 emb_type=emb_type,
                 custom_feats_file=custom_feats_file,
+                selected_ids=mosi_selected_ids,
             )
         elif dataset == "firstimpr":
             save_data_components(
@@ -247,7 +269,18 @@ if __name__ == "__main__":
                 glove_path,
                 emb_type=emb_type,
                 custom_feats_file=custom_feats_file,
-                selected_ids=selected_ids,
+                selected_ids=rav_selected_ids,
+            )
+        elif dataset == "asist":
+            save_data_components(
+                dataset,
+                save_path,
+                asist_path,
+                feature_set,
+                transcription_type,
+                glove_path,
+                emb_type=emb_type,
+                custom_feats_file=custom_feats_file,
             )
         # todo: lives requires custom fields
         # elif dataset == "lives":

@@ -7,8 +7,8 @@ from utils.data_prep_helpers import (
 )
 
 
-def prep_mustard_data(
-    data_path="../../datasets/multimodal_datasets/mustard",
+def prep_asist_data(
+    data_path="../../asist_data2/overall_sent-emo.csv",
     feature_set="IS13",
     transcription_type="gold",
     embedding_type="distilbert",
@@ -28,14 +28,12 @@ def prep_mustard_data(
         glove = None
 
     # holder for name of file containing utterance info
-    if transcription_type.lower() == "gold":
-        utts_name = "mustard_utts.tsv"
-    else:
-        utts_name = f"mustard_{transcription_type.lower()}.tsv"
+    utts_name = "sent-emo_all-annotated.csv"
+    # utts_name = "overall_sent-emo.csv"
 
     # create instance of StandardPrep class
-    mustard_prep = SelfSplitPrep(
-        data_type="mustard",
+    asist_prep = SelfSplitPrep(
+        data_type="asist",
         data_path=data_path,
         feature_set=feature_set,
         utterance_fname=utts_name,
@@ -49,7 +47,7 @@ def prep_mustard_data(
     )
 
     # get train, dev, test data
-    train_data, dev_data, test_data = mustard_prep.get_data_folds()
+    train_data, dev_data, test_data = asist_prep.get_data_folds()
 
     # get train ys
     if as_dict:

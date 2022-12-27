@@ -1,3 +1,4 @@
+from asist.prep_asist import prep_asist_data
 from cdc.prep_cdc import *
 from cmu_mosi.prep_mosi import *
 from firstimpr.prep_firstimpr import *
@@ -123,6 +124,20 @@ def prep_data(
         )
     elif dataset == "lives":
         train, dev, test, weights = prep_lives_data(
+            data_path,
+            feature_set,
+            transcription_type,
+            emb_type,
+            glove_path,
+            feats_to_use,
+            as_dict=data_as_dict,
+            avg_acoustic_data=avg_acoustic_data,
+            custom_feats_file=custom_feats_file,
+            num_train_ex=num_train_ex,
+            include_spectrograms=include_spectrograms
+        )
+    elif dataset == "asist":
+        train, dev, test, weights = prep_asist_data(
             data_path,
             feature_set,
             transcription_type,

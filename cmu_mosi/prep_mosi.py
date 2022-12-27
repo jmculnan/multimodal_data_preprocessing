@@ -1,7 +1,7 @@
 import h5py
 import re
 
-from prep_data import SelfSplitPrep
+from prep_data import SelfSplitPrep, get_updated_class_weights
 from utils.data_prep_helpers import make_glove_dict, Glove, get_data_samples
 
 from utils.audio_extraction import run_feature_extraction
@@ -57,7 +57,7 @@ def prep_mosi_data(
         train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
-    class_weights = mosi_prep.get_updated_class_weights(train_ys)
+    class_weights = get_updated_class_weights(train_ys)
 
     if num_train_ex:
         train_data = get_data_samples(train_data, num_train_ex)

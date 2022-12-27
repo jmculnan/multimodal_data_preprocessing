@@ -21,6 +21,7 @@ from combine_xs_and_ys_by_dataset import (
     combine_xs_and_ys_mustard,
     combine_xs_and_ys_cdc,
     combine_xs_and_ys_mosi, combine_xs_and_ys_lives,
+    combine_xs_and_ys_asist
 )
 
 from utils.audio_extraction import ExtractAudio, convert_to_wav, run_feature_extraction
@@ -235,6 +236,9 @@ class SelfSplitPrep:
             # lives data has a more complicated way of getting speaker
             all_speakers = get_lives_speakers(self.all_data)
             speaker2idx = get_speaker_to_index_dict(all_speakers)
+        elif data_type == "asist":
+            all_speakers = set(self.all_data['participantid'])
+            speaker2idx = get_speaker_to_index_dict(all_speakers)
         else:
             speaker2idx = None
 
@@ -253,7 +257,7 @@ class SelfSplitPrep:
         self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_bert)
 
         # set longest accepted acoustic file
-        self.longest_acoustic = 1500
+        self.longest_acoustic = 1000
 
         # set DataPrep instance for each partition
         self.train_prep = DataPrep(
@@ -287,16 +291,16 @@ class SelfSplitPrep:
         )
         return train_data, dev_data, test_data
 
-    def get_updated_class_weights(self, train_ys):
-        """
-        Get updated class weights
-        Because DataPrep assumes you only enter train set
-        :return:
-        """
-        labels = [int(y) for y in train_ys]
-        classes = sorted(list(set(labels)))
-        weights = compute_class_weight("balanced", classes=classes, y=labels)
-        return torch.tensor(weights, dtype=torch.float)
+def get_updated_class_weights(train_ys):
+    """
+    Get updated class weights
+    Because DataPrep assumes you only enter train set
+    :return:
+    """
+    labels = [int(y) for y in train_ys]
+    classes = sorted(list(set(labels)))
+    weights = compute_class_weight("balanced", classes=classes, y=labels)
+    return torch.tensor(weights, dtype=torch.float)
 
 
 class DataPrep:
@@ -478,6 +482,18 @@ class DataPrep:
                 spec_data=self.spec_set,
                 spec_lengths=self.spec_lengths_list
             )
+        elif self.d_type == "asist":
+            combined = combine_xs_and_ys_asist(
+                self.data_tensors,
+                self.acoustic_tensor,
+                self.acoustic_lengths,
+                self.acoustic_means,
+                self.acoustic_stdev,
+                speaker2idx,
+                as_dict=as_dict,
+                spec_data=self.spec_set,
+                spec_lengths=self.spec_lengths_list
+            )
 
         return combined
 
@@ -508,6 +524,8 @@ class DataPrep:
             text_data['utt_num'] = text_data['utt_num'].astype(str)
             valid_ids = text_data.agg(lambda x: f"{x['recording_id']}_utt{x['utt_num']}_speaker{x['speaker']}", axis=1)
             # valid_ids = text_data[['recording_id', 'utt_num']].agg("_".join, axis=1)
+        elif self.d_type == "asist":
+            valid_ids = text_data["message_id"].tolist()
 
         # get intersection of valid ids and ids present in acoustic data
         all_used_ids = set(valid_ids).intersection(set(acoustic_dict.keys()))
@@ -552,6 +570,9 @@ class DataPrep:
                     ],
                     dim=0,
                 )
+
+            del acoustic_dict[item]
+            del acoustic_lengths_dict[item]
 
             # add features as tensor to acoustic data
             all_acoustic.append(acoustic_holder)
@@ -644,6 +665,10 @@ class DataPrep:
             )
         elif self.d_type == "lives":
             data_tensor_dict = make_data_tensors_lives(
+                text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
+            )
+        elif self.d_type == "asist":
+            data_tensor_dict = make_data_tensors_asist(
                 text_data, self.used_ids, longest_utt, self.tokenizer, glove, bert_type
             )
 

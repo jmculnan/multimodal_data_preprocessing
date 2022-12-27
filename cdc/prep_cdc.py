@@ -5,7 +5,7 @@ import re
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from prep_data import SelfSplitPrep
+from prep_data import SelfSplitPrep, get_updated_class_weights
 from utils.data_prep_helpers import (
     split_string_time,
     make_glove_dict,
@@ -67,7 +67,7 @@ def prep_cdc_data(
         train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
-    class_weights = cdc_prep.get_updated_class_weights(train_ys)
+    class_weights = get_updated_class_weights(train_ys)
 
     # # get a subset of the training data, if necessary
     if num_train_ex:

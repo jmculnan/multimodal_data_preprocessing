@@ -506,3 +506,66 @@ def combine_xs_and_ys_lives(
         exit("LIvES data can only be used in dict format")
 
     return data
+
+
+def combine_xs_and_ys_asist(
+    data_dict,
+    acoustic_data,
+    acoustic_lengths,
+    acoustic_means,
+    acoustic_stdev,
+    speaker2idx,
+    as_dict=False,
+    spec_data=None,
+    spec_lengths=None,
+):
+    """
+    Combine all x and y data into list of tuples for easier access with DataLoader
+    """
+    data = []
+
+    if as_dict:
+        for i, item in enumerate(acoustic_data):
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
+            data.append(
+                {
+                    "x_acoustic": item_transformed.clone().detach(),
+                    "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_spec": spec_data[i].clone().detach() if spec_data else 0,
+                    "x_speaker": speaker2idx[data_dict["all_speakers"][i]],
+                    "x_gender": 0,  # todo: add gender later?
+                    "ys": [data_dict["all_traits"][i].clone().detach(),
+                           data_dict["all_emotions"][i].clone().detach(),
+                           data_dict["all_sentiments"][i].clone().detach(),],
+                    "audio_id": data_dict["all_audio_ids"][i],
+                    "utt_length": data_dict["utt_lengths"][i],
+                    "acoustic_length": acoustic_lengths[i],
+                    "spec_length": spec_lengths[i] if spec_lengths else 0,
+                }
+            )
+
+    else:
+        for i, item in enumerate(acoustic_data):
+            item_transformed = transform_acoustic_item(
+                item, acoustic_means, acoustic_stdev
+            )
+            data.append(
+                (
+                    item_transformed.clone().detach(),
+                    data_dict["all_utts"][i].clone().detach(),
+                    speaker2idx[data_dict["all_speakers"][i]],
+                    0,  # todo: add gender later?
+                    data_dict["all_traits"][i].clone().detach(),
+                    data_dict["all_emotions"][i].clone().detach(),
+                    data_dict["all_sentiments"][i].clone().detach(),
+                    spec_data[i].clone().detach() if spec_data else 0,
+                    spec_lengths[i] if spec_lengths else 0,
+                    data_dict["all_audio_ids"][i],
+                    data_dict["utt_lengths"][i],
+                    acoustic_lengths[i],
+                )
+            )
+
+    return data
