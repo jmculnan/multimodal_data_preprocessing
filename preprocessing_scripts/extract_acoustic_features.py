@@ -2,6 +2,8 @@
 # this script assumes that all of the datasets you will use
 #   exist in the same base directory
 
+import sys
+sys.path.append("/home/jculnan/github/multimodal_data_preprocessing")
 from utils.audio_extraction import run_feature_extraction
 
 
@@ -71,6 +73,11 @@ def extract_acoustic_features(datasets_list, base_path, feature_set):
             run_feature_extraction(f"{lives_path}/wav",
                                    feature_set,
                                    f"{lives_path}/{feature_set}")
+        elif dataset == "asist":
+            asist_path = base_path
+            run_feature_extraction(f"{asist_path}/split",
+                                   feature_set,
+                                   f"{asist_path}/{feature_set}")
 
 
 if __name__ == "__main__":
@@ -78,9 +85,11 @@ if __name__ == "__main__":
     # datasets = ["mosi", "ravdess"]
     # base_path = "../../datasets/multimodal_datasets"
 
-    dataset = ["lives"]
-    base_path = "../../lives_test/done"
+    #dataset = ["lives"]
+    #base_path = "../../lives_test/done"
 
-    extract_acoustic_features(dataset, base_path, "spec")
+    dataset = ["asist"]
+    base_path = "/media/jculnan/backup/jculnan/datasets/asist_data2"
 
-    # extract_acoustic_features(datasets, base_path, "spec")
+    extract_acoustic_features(dataset, base_path, "IS13")
+    # extract_acoustic_features(dataset, base_path, "spec")
