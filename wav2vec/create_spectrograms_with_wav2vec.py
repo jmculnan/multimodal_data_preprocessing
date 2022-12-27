@@ -39,8 +39,8 @@ def get_and_save_spectrogram(path_to_dir, audiofile, save_dir, resample=None):
         n_fft=1024,
         win_length=None,
         hop_length=512,
-        center=True,
-        pad_mode="reflect",
+        #center=True,
+        #pad_mode="reflect",
         power=2.0,
     )
 
@@ -80,10 +80,12 @@ def plot_spectrogram(spec, title=None, ylabel='freq_bin', aspect='auto', xmax=No
 
 
 if __name__ == "__main__":
-    the_files = "../../datasets/multimodal_datasets/MELD_formatted/train/train_audio_mono"
+    the_files = "../../asist_data/sent-emo/for_PI_meeting_07.22/split"
+    #the_files = "../../datasets/multimodal_datasets/MELD_formatted/train/train_audio_mono"
+    output = "../../asist_data/sent-emo/for_PI_meeting_07.22/spectrograms"
 
     max_size = None
 
     for f in os.listdir(the_files):
         if f.endswith(".wav"):
-            get_and_save_spectrogram(the_files, f, "output/spectrograms", None)
+            get_and_save_spectrogram(the_files, f, output, None)

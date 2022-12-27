@@ -486,3 +486,5 @@ def extract_portions_of_mp4_or_wav(
             str(save_name),
         ]
     )
+
+    return save_name

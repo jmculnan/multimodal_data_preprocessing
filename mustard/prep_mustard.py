@@ -58,7 +58,7 @@ def prep_mustard_data(
         train_ys = [int(item[4]) for item in train_data]
 
     # get updated class weights using train ys
-    class_weights = mustard_prep.get_updated_class_weights(train_ys)
+    class_weights = get_updated_class_weights(train_ys)
 
     if num_train_ex:
         train_data = get_data_samples(train_data, num_train_ex)
