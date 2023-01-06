@@ -105,7 +105,8 @@ class StandardPrep:
             self.use_bert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(all_data, self.tokenizer, self.use_bert)
+        self.longest_utt = get_longest_utt(all_data, self.tokenizer, self.use_bert,
+                                           bert_type.lower() == "text")
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1500
@@ -237,8 +238,11 @@ class SelfSplitPrep:
             all_speakers = get_lives_speakers(self.all_data)
             speaker2idx = get_speaker_to_index_dict(all_speakers)
         elif data_type == "asist":
-            all_speakers = set(self.all_data['participantid']) # participant
+            all_speakers = set(self.all_data['participant']) # participant
             speaker2idx = get_speaker_to_index_dict(all_speakers)
+            # drop na's for sent-emo labels
+            # otherwise, more acoustic files will be read in than text items
+            self.all_data = self.all_data.dropna(subset=['sentiment', 'emotion'])
         else:
             speaker2idx = None
 
@@ -248,6 +252,9 @@ class SelfSplitPrep:
                 self.tokenizer = get_bert_tokenizer()
             elif bert_type.lower() == "roberta":
                 self.tokenizer = get_roberta_tokenizer()
+            # todo: clean this up
+            elif bert_type.lower() == "text":
+                self.tokenizer = get_tokenizer("basic_english")
             else:
                 self.tokenizer = get_distilbert_tokenizer()
             self.use_bert = True
@@ -256,7 +263,8 @@ class SelfSplitPrep:
             self.use_bert = False
 
         # get longest utt
-        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_bert)
+        self.longest_utt = get_longest_utt(self.all_data, self.tokenizer, self.use_bert,
+                                           bert_type.lower() == "text")
 
         # set longest accepted acoustic file
         self.longest_acoustic = 1000
@@ -288,9 +296,19 @@ class SelfSplitPrep:
         self.data = self.train_prep.combine_xs_and_ys(speaker2idx, as_dict)
 
     def get_data_folds(self):
-        train_data, dev_data, test_data = create_data_folds_list(
-            self.data, self.train_prop, self.test_prop
-        )
+        # get the list of all conversations
+        if self.d_type == "lives":
+            all_convos = list(set([item['recording_id'] for item in self.data]))
+            train_convos, dev_convos, test_convos = create_data_folds_list(
+                all_convos, self.train_prop, self.test_prop
+            )
+            train_data = [item for item in self.data if item["call_id"] in train_convos]
+            dev_data = [item for item in self.data if item["call_id"] in dev_convos]
+            test_data = [item for item in self.data if item["call_id"] in test_convos]
+        else:
+            train_data, dev_data, test_data = create_data_folds_list(
+                self.data, self.train_prop, self.test_prop
+            )
         return train_data, dev_data, test_data
 
 def get_updated_class_weights(train_ys):
@@ -676,24 +694,32 @@ class DataPrep:
         return data_tensor_dict
 
 
-def get_longest_utt(data, tokenizer, use_bert=False):
+def get_longest_utt(data, tokenizer, use_bert=False, return_text=False):
     """
     Get the length of longest utterance in the dataset
     :param data: a pandas df containing all utterances
     :param tokenizer: a tokenizer
     :param use_bert: whether to use bert/distilbert tokenizer
+    :param return_text: whether the data created will have text (vs embeddings)
     :return: length of longest utterance
     """
-    all_utts = data["utterance"].tolist()
+    if "utterance" in data.columns.to_list():
+        all_utts = data["utterance"].tolist()
+    else:
+        all_utts = data["utt"].tolist()
 
-    if use_bert:
+    if return_text:
+        item_lens = [
+            len(tokenizer(clean_up_word("[CLS] " + str(utt) + " [SEP]"))) for utt in all_utts
+        ]
+    elif use_bert:
         # tokenize and count all items in dataset
         item_lens = [
             len(tokenizer.tokenize("[CLS] " + str(utt) + " [SEP]")) for utt in all_utts
         ]
     else:
         # tokenize, clean up, and count all items in dataset
-        item_lens = [len(tokenizer(clean_up_word(str(item)))) for item in all_utts]
+        item_lens = [len(tokenizer(clean_up_word(str(utt)))) for utt in all_utts]
 
     # return longest
     return max(item_lens)

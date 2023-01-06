@@ -529,7 +529,9 @@ def combine_xs_and_ys_asist(
             data.append(
                 {
                     "x_acoustic": item_transformed.clone().detach(),
-                    "x_utt": data_dict["all_utts"][i].clone().detach(),
+                    "x_utt": data_dict["all_utts"][i].clone().detach()
+                             if type(data_dict["all_utts"][i]) == torch.tensor
+                             else data_dict["all_utts"][i],
                     "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                     "x_speaker": data_dict["all_speakers"][i],
                     "x_gender": 0,  # todo: add gender later?

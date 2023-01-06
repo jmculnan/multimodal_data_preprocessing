@@ -1,10 +1,8 @@
 
-import os
-import pickle
-
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
+from sklearn.utils import compute_class_weight
 
 from collections import OrderedDict
 import pandas as pd
@@ -65,16 +63,30 @@ def prep_asist_data(
     train_data, dev_data, test_data = asist_prep.get_data_folds()
 
     # get train ys
-    if as_dict:
-        train_ys = [int(item["ys"][0]) for item in train_data]
-    else:
-        train_ys = [int(item[4]) for item in train_data]
+    train_ys = [item['ys'] for item in train_data]
 
     # get updated class weights using train ys
-    class_weights = asist_prep.get_updated_class_weights(train_ys)
+    class_weights = get_updated_class_weights_multicat(train_ys)
 
     return train_data, dev_data, test_data, class_weights
 
+
+def get_updated_class_weights_multicat(train_ys):
+    """
+    Get updated class weights
+    Because DataPrep assumes you only enter train set
+    :return:
+    """
+    all_task_weights = []
+    # get class weights for each task
+    for i in range(len(train_ys[0])):
+        labels = [int(y[i]) for y in train_ys]
+        classes = sorted(list(set(labels)))
+        weights = compute_class_weight("balanced", classes=classes, y=labels)
+        weights = torch.tensor(weights, dtype=torch.float)
+        all_task_weights.append(weights)
+
+    return all_task_weights
 
 class AsistDataset(Dataset):
     def __init__(

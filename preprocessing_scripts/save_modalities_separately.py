@@ -59,7 +59,7 @@ def save_data_components(
         custom_feats_file,
         selected_ids=selected_ids,
         num_train_ex=None,
-        include_spectrograms=True
+        include_spectrograms=False
     )
     # save class weights
     if zip:
@@ -145,7 +145,7 @@ def get_specific_fields(data, field_type, fields=None):
 
 
 if __name__ == "__main__":
-    base_path = "/media/jculnan/backup/jculnan/datasets/asist_data2"
+    base_path = "/media/jculnan/One Touch/jculnan/datasets/MultiCAT"
     #base_path = "/media/jculnan/backup/jculnan/datasets/multimodal_datasets"
     #base_path = "../../datasets/multimodal_datasets"
     #cdc_path = f"{base_path}/Columbia_deception_corpus"
@@ -158,34 +158,35 @@ if __name__ == "__main__":
     #lives_path = "../../lives_test/done"
 
     #save_path = "../../datasets/pickled_data/field_separated_data"
-    save_path = "/media/jculnan/backup/jculnan/datasets/pickled_data/field_separated_data"
+    save_path = "/media/jculnan/One Touch/jculnan/datasets/MultiCAT"
 
     #glove_path = "../../datasets/glove/glove.subset.300d.txt"
-    glove_path = "/media/jculnan/backup/jculnan/datasets/glove/glove.subset.300d.txt"
+    glove_path = "/media/jculnan/One Touch/jculnan/datasets/glove/glove.subset.300d.txt"
 
     feature_set = "IS13"
 
     # get the ids from a pickle file containing ids in order
-    rav_selected_ids_dict = pickle.load(
-        open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
-    )
-    rav_selected_ids = []
-    rav_selected_ids.extend(rav_selected_ids_dict["train"])
-    rav_selected_ids.extend(rav_selected_ids_dict["test"])
-    rav_selected_ids.extend(rav_selected_ids_dict["dev"])
+    # rav_selected_ids_dict = pickle.load(
+    #     open("../../datasets/pickled_data/ravdess_ordered_ids.pickle", "rb")
+    # )
+    # rav_selected_ids = []
+    # rav_selected_ids.extend(rav_selected_ids_dict["train"])
+    # rav_selected_ids.extend(rav_selected_ids_dict["test"])
+    # rav_selected_ids.extend(rav_selected_ids_dict["dev"])
 
     # get ids for mosi frmo pickle file containing ids in order
-    mosi_selected_ids_dict = pickle.load(
-        open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
-    )
-    mosi_selected_ids = []
-    mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
-    mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
-    mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
+    # mosi_selected_ids_dict = pickle.load(
+    #     open('../../datasets/pickled_data/mosi_ordered_ids.pickle', 'rb')
+    # )
+    # mosi_selected_ids = []
+    # mosi_selected_ids.extend(mosi_selected_ids_dict["train"])
+    # mosi_selected_ids.extend(mosi_selected_ids_dict["test"])
+    # mosi_selected_ids.extend(mosi_selected_ids_dict["dev"])
 
     transcription_type = "gold"
     #emb_type = "distilbert"
-    emb_type = "distilbert"
+    # emb_type = "distilbert"
+    emb_type = "text" # include text, to be used with bert in the model itself
     # emb_type = "bert"
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]

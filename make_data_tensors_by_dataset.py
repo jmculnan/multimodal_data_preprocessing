@@ -497,6 +497,7 @@ def make_data_tensors_lives(
         "all_audio_ids": [],
         "utt_lengths": [],
         "all_recording_ids": [],
+        "all_call_ids": [],
         "all_utt_nums": [],
     }
 
@@ -562,7 +563,7 @@ def make_data_tensors_lives(
 
 
 def make_data_tensors_asist(
-    text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert"
+    text_data, used_utts_list, longest_utt, tokenizer, glove, bert_type="distilbert", use_text=True
 ):
     """
     Make the data tensors for asist
@@ -571,6 +572,8 @@ def make_data_tensors_asist(
     :param longest_utt: length of longest utt
     :param tokenizer: a tokenizer
     :param glove: an instance of class Glove
+    :param bert_type: the type of bert embeddings to get, if using
+    :param use_text: whether to save raw text instead of embeddings
     :return: a dict containing tensors for utts, speakers, ys,
         and utterance lengths
     """
@@ -599,7 +602,7 @@ def make_data_tensors_asist(
     else:
         emb_maker = DistilBertEmb()
 
-    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for ASIST"):
+    for idx, row in tqdm(text_data.iterrows(), total=len(text_data), desc="Organizing data for MultiCAT"):
         if row["message_id"] in used_utts_list:
 
             # get audio id
@@ -610,7 +613,7 @@ def make_data_tensors_asist(
                 utts = [0] * longest_utt
 
                 # get values from row
-                utt = tokenizer(clean_up_word(str(row["utterance"])))
+                utt = tokenizer(clean_up_word(str(row["utt"])))
                 all_data["utt_lengths"].append(len(utt))
 
                 # convert words to indices for glove
@@ -619,9 +622,17 @@ def make_data_tensors_asist(
                     utts[i] = item
 
                 all_data["all_utts"].append(torch.tensor(utts))
+            elif bert_type.lower() == "text":
+                # get values from row
+                utt = tokenizer(clean_up_word(str(row['utt'])))
+                utt.insert(0, "[CLS]")
+                utt.append("[SEP]")
+
+                all_data["utt_lengths"].append(len(utt))
+                all_data["all_utts"].append(utt)
             else:
                 # else use the bert/distilbert tokenizer instead
-                utt, ids = emb_maker.tokenize(clean_up_word(str(row["utterance"])))
+                utt, ids = emb_maker.tokenize(clean_up_word(str(row["utt"])))
                 # convert ids to tensor
                 ids = torch.tensor(ids)
                 all_data["utt_lengths"].append(len(ids))
@@ -632,10 +643,13 @@ def make_data_tensors_asist(
 
                 all_data["all_utts"].append(utt_embs)
 
-            spk_id = row["participantid"]  #participant
+            spk_id = row["participant"]
             sentiment = sent2idx[row["sentiment"]]
             emotion = emo2idx[row["emotion"]]
-            trait = trait2idx[row["max_trait"]]
+
+            # fixme
+            trait = 0
+            # trait = trait2idx[row["max_trait"]]
 
             all_data["all_speakers"].append(spk_id)
             all_data["all_sentiments"].append(sentiment)
@@ -648,8 +662,9 @@ def make_data_tensors_asist(
     all_data["all_traits"] = torch.tensor(all_data["all_traits"])
 
     # pad and transpose utterance sequences
-    all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])
-    all_data["all_utts"] = all_data["all_utts"].transpose(0, 1)
+    if not use_text:
+        all_data["all_utts"] = nn.utils.rnn.pad_sequence(all_data["all_utts"])
+        all_data["all_utts"] = all_data["all_utts"].transpose(0, 1)
 
     # return data
     return all_data
