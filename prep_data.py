@@ -709,8 +709,10 @@ def get_longest_utt(data, tokenizer, use_bert=False, return_text=False):
         all_utts = data["utt"].tolist()
 
     if return_text:
+        # todo: is this even needed?
+        #   changed to 1 bc seems irrelevant
         item_lens = [
-            len(tokenizer(clean_up_word("[CLS] " + str(utt) + " [SEP]"))) for utt in all_utts
+            1 for utt in all_utts
         ]
     elif use_bert:
         # tokenize and count all items in dataset

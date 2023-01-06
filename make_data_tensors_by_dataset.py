@@ -624,11 +624,9 @@ def make_data_tensors_asist(
                 all_data["all_utts"].append(torch.tensor(utts))
             elif bert_type.lower() == "text":
                 # get values from row
-                utt = tokenizer(clean_up_word(str(row['utt'])))
-                utt.insert(0, "[CLS]")
-                utt.append("[SEP]")
-
-                all_data["utt_lengths"].append(len(utt))
+                # utt = tokenizer(clean_up_word(str(row['utt'])))
+                utt = str(row['utt'])
+                all_data["utt_lengths"].append(1)
                 all_data["all_utts"].append(utt)
             else:
                 # else use the bert/distilbert tokenizer instead

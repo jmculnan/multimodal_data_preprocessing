@@ -535,10 +535,9 @@ def combine_xs_and_ys_asist(
                     "x_spec": spec_data[i].clone().detach() if spec_data else 0,
                     "x_speaker": data_dict["all_speakers"][i],
                     "x_gender": 0,  # todo: add gender later?
-                    # "ys": [data_dict["all_traits"][i].clone().detach(),
-                    #        data_dict["all_emotions"][i].clone().detach(),
-                    #        data_dict["all_sentiments"][i].clone().detach(),],
-                    "ys": [data_dict["ys"][i] if 'ys' in data_dict.keys() else 0],
+                    "ys": [data_dict["all_sentiments"][i],
+                           data_dict["all_emotions"][i]],
+                    # "ys": [data_dict["ys"][i] if 'ys' in data_dict.keys() else 0],
                     "audio_id": data_dict["all_audio_ids"][i],
                     "utt_length": data_dict["utt_lengths"][i],
                     "acoustic_length": acoustic_lengths[i],
