@@ -89,7 +89,7 @@ if __name__ == "__main__":
     #base_path = "../../lives_test/done"
 
     dataset = ["asist"]
-    base_path = "/media/jculnan/backup/jculnan/datasets/asist_data2"
+    base_path = "/media/jculnan/backup/jculnan/datasets/MultiCAT"
 
     extract_acoustic_features(dataset, base_path, "IS13")
     # extract_acoustic_features(dataset, base_path, "spec")

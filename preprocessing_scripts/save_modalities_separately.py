@@ -158,7 +158,7 @@ if __name__ == "__main__":
     #lives_path = "../../lives_test/done"
 
     #save_path = "../../datasets/pickled_data/field_separated_data"
-    save_path = "/media/jculnan/One Touch/jculnan/datasets/MultiCAT"
+    save_path = "/media/jculnan/One Touch/jculnan/datasets/pickled_data/field_separated_data"
 
     #glove_path = "../../datasets/glove/glove.subset.300d.txt"
     glove_path = "/media/jculnan/One Touch/jculnan/datasets/glove/glove.subset.300d.txt"
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     transcription_type = "gold"
     #emb_type = "distilbert"
     # emb_type = "distilbert"
-    emb_type = "text" # include text, to be used with bert in the model itself
+    emb_type = "bert" # include text, to be used with bert in the model itself
     # emb_type = "bert"
 
     # datasets = ["cdc", "mosi", "firstimpr", "meld", "ravdess"]

@@ -1,13 +1,8 @@
-# lives data exists in the following format:
-#   trs files and audio recordings
-#   recordings are long and include multiple participants
-#   this should be prepared as a structured dialog task
-#   so that you can examine each item individually, but can also
-#   make use of the structure of entire conversations
-#   NOTE: the speaker diarization in google is pretty rough
-#   todo: this will need to be supported in some way later on
-#   todo: what to do about long chunks marked as a single speaker?
-#       can split on pauses or can split on num words
+# lives data now consists of audio files and
+# csv files containing timestamped transcriptions
+# each line on the csv file contains a single utterance / turn
+# we need to preserve the order of entire conversations
+# each csv files represents a conversation
 import os.path
 
 import pandas as pd
@@ -33,9 +28,17 @@ from utils.audio_extraction import (
     run_feature_extraction, AudioSplit,
 )
 
+# components of this script
+
+# get audio + split it
+# extract features from split audio
+# combine the csv files
+
+# columns names of combined diarization + transcription files
+# fname,turn_start,turn_length,speaker,turn_end,time_to_next,transcription
 
 def prep_lives_data(
-    data_path="../../lives_test/done",
+    data_path="../../lives_dataset",
     feature_set="IS13",
     transcription_type="gold",
     embedding_type="distilbert",
@@ -55,7 +58,7 @@ def prep_lives_data(
         glove = None
 
     # holder for name of file containing utterance info
-    utts_name = f"transcriptions/lives_json_{transcription_type.lower()}.csv"
+    utts_name = "lives_diarized_transcribed.csv"
 
     # create instance of StandardPrep class
     lives_prep = SelfSplitPrep(

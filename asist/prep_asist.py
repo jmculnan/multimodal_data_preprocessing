@@ -22,7 +22,7 @@ from utils.data_prep_helpers import (
 from prep_data import *
 
 def prep_asist_data(
-    data_path="../../asist_data2/overall_sent-emo.csv",
+    data_path="../../asist_data2/processed_dataset_updated.csv",
     feature_set="IS13",
     transcription_type="gold",
     embedding_type="distilbert",
@@ -42,7 +42,8 @@ def prep_asist_data(
         glove = None
 
     # holder for name of file containing utterance info
-    utts_name = "overall_sent-emo.csv"
+    # utts_name = "overall_sent-emo.csv"
+    utts_name = "processed_dataset_updated.csv"
 
     # create instance of StandardPrep class
     asist_prep = SelfSplitPrep(
